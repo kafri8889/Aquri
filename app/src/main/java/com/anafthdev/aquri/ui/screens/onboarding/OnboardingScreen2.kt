@@ -36,12 +36,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.anafthdev.aquri.R
+import com.anafthdev.aquri.data.model.enum.ActivityLevel
+import com.anafthdev.aquri.data.model.enum.Climate
 import com.anafthdev.aquri.ui.navigation.Destinations
 import com.anafthdev.aquri.ui.screens.onboarding.components.OnboardingBottomButton
 import com.anafthdev.aquri.ui.screens.onboarding.components.OnboardingCard
@@ -148,14 +149,15 @@ fun ActivityLevelCard(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+
+    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
     
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(32.dp))
-            .background(if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant)
-            .border(2.dp, borderColor, RoundedCornerShape(32.dp))
+            .clip(RoundedCornerShape(24.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(2.dp, borderColor, RoundedCornerShape(24.dp))
             .clickable(onClick = onClick)
             .padding(24.dp),
         verticalAlignment = Alignment.CenterVertically

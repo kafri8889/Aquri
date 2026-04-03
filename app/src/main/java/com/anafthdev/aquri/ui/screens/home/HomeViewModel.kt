@@ -1,0 +1,153 @@
+package com.anafthdev.aquri.ui.screens.home
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.anafthdev.aquri.data.model.entity.BottleEntity
+import com.anafthdev.aquri.data.model.entity.DailySummaryEntity
+import com.anafthdev.aquri.data.model.entity.HydrationLogEntity
+import com.anafthdev.aquri.data.model.entity.HydrationLogWithBottle
+import com.anafthdev.aquri.data.model.entity.UserEntity
+import com.anafthdev.aquri.data.model.entity.UserGamificationEntity
+import com.anafthdev.aquri.data.model.enum.DrinkType
+import com.anafthdev.aquri.data.repository.HydrationRepository
+import com.anafthdev.aquri.data.repository.UserRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import java.util.Calendar
+import javax.inject.Inject
+
+@OptIn(ExperimentalCoroutinesApi::class)
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    private val hydrationRepository: HydrationRepository,
+    private val userRepository: UserRepository
+) : ViewModel() {
+
+    private val midnightDate: Long
+        get() = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+
+    val user: StateFlow<UserEntity?> = userRepository.getUser()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
+    val dailySummary: StateFlow<DailySummaryEntity?> = user
+        .filterNotNull()
+        .flatMapLatest { user ->
+            hydrationRepository.getDailySummary(midnightDate)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
+    val bottles: StateFlow<List<BottleEntity>> = hydrationRepository.getAllBottles()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val recentLogs: StateFlow<List<HydrationLogWithBottle>> = user
+        .filterNotNull()
+        .flatMapLatest { user ->
+            hydrationRepository.getLogsWithBottleByDate(midnightDate)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val gamification: StateFlow<UserGamificationEntity?> = userRepository.getUser()
+        .filterNotNull()
+        .flatMapLatest { user ->
+            userRepository.getGamification(user.id)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
+    val reminderSettings = user
+        .filterNotNull()
+        .flatMapLatest { user ->
+            userRepository.getReminderSettings(user.id)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
+    val nextReminderTime: StateFlow<Long?> = reminderSettings
+        .flatMapLatest { settings ->
+            kotlinx.coroutines.flow.flow {
+//                if (settings?.enabled == true) {
+//                    emit(System.currentTimeMillis() + (settings.intervalMinutes * 60 * 1000))
+//                } else {
+//                    emit(null)
+//                }
+
+                // Simple mock for next reminder: 1 hour from now or based on interval
+                // In a real app, this would use the actual scheduled times or interval logic
+                emit(System.currentTimeMillis() + (60 * 60 * 1000))
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
+    fun drink(bottle: BottleEntity) {
+        viewModelScope.launch {
+            val currentUser = user.value ?: return@launch
+            
+            // Log the drink
+            hydrationRepository.insertLog(
+                HydrationLogEntity(
+                    userId = currentUser.id,
+                    bottleId = bottle.id,
+                    amountMl = bottle.volumeMl,
+                    drinkType = currentUser.gender.let { 
+                        // Just a placeholder, drinkType should ideally be from bottle or UI
+                        DrinkType.Water
+                    },
+                    logDate = midnightDate
+                )
+            )
+
+            // Update daily summary
+            val currentSummary = dailySummary.value ?: DailySummaryEntity(
+                userId = currentUser.id,
+                summaryDate = midnightDate,
+                goalMl = currentUser.dailyGoalMl
+            )
+
+            val newTotalMl = currentSummary.totalMl + bottle.volumeMl
+            hydrationRepository.insertDailySummary(
+                currentSummary.copy(
+                    totalMl = newTotalMl,
+                    completionPct = newTotalMl / currentSummary.goalMl,
+                    goalReached = newTotalMl >= currentSummary.goalMl
+                )
+            )
+        }
+    }
+}

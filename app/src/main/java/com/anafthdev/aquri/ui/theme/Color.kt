@@ -23,7 +23,7 @@ val LightOnTertiary = Color.White
 val LightTertiaryContainer = Color(0xFFCBF3F0)
 val LightOnTertiaryContainer = Color(0xFF00201D)
 
-val LightBackground = Color(0xFFF8FAFC)
+val LightBackground = Color(0xFFF7F9FB)
 val LightOnBackground = Color(0xFF191C1E)
 val LightSurface = Color(0xFFF8FAFC)
 val LightOnSurface = Color(0xFF191C1E)

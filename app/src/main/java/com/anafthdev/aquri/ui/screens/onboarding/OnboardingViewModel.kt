@@ -3,9 +3,13 @@ package com.anafthdev.aquri.ui.screens.onboarding
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.Constraints
 import com.anafthdev.aquri.data.Constant
+import com.anafthdev.aquri.data.model.entity.UserEntity
+import com.anafthdev.aquri.data.model.enum.ActivityLevel
+import com.anafthdev.aquri.data.model.enum.Climate
+import com.anafthdev.aquri.data.model.enum.Gender
 import com.anafthdev.aquri.data.repository.PreferenceRepository
+import com.anafthdev.aquri.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +21,8 @@ import kotlin.math.roundToInt
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
-    private val preferenceRepository: PreferenceRepository
+    private val preferenceRepository: PreferenceRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OnboardingUiState())
@@ -46,7 +51,19 @@ class OnboardingViewModel @Inject constructor(
 
     fun saveGoal() {
         viewModelScope.launch {
-            preferenceRepository.setDailyGoal(_uiState.value.dailyGoal)
+            val state = _uiState.value
+            preferenceRepository.setDailyGoal(state.dailyGoal)
+            
+            // Also save to Room
+            userRepository.insertUser(
+                UserEntity(
+                    gender = state.gender,
+                    weightKg = state.weight.toFloatOrNull() ?: 0f,
+                    activityLevel = state.activityLevel,
+                    climate = state.climate,
+                    dailyGoalMl = state.dailyGoal
+                )
+            )
         }
     }
 
@@ -62,6 +79,16 @@ private fun OnboardingUiState.withRecalculatedGoal(): OnboardingUiState {
     return copy(dailyGoal = calculateDailyGoal().fastCoerceAtLeast(Constant.MIN_DAILY_GOAL))
 }
 
+/**
+ * Calculates the ideal daily hydration goal based on user input.
+ *
+ * The logic follows WHO recommendations with adjustments for lifestyle:
+ * 1. Base: 35ml/kg (Male), 31ml/kg (Female), 33ml/kg (Other).
+ * 2. Activity: Adds up to 700ml for active users.
+ * 3. Climate: Adjusts ±200ml based on temperature and humidity factors.
+ *
+ * @return Hydration target in milliliters, rounded to the nearest 50ml.
+ */
 fun OnboardingUiState.calculateDailyGoal(): Float {
     val rawWeight = weight.toFloatOrNull() ?: return 0f
     if (rawWeight <= 0f) return 0f
@@ -106,7 +133,4 @@ data class OnboardingUiState(
     val dailyGoal: Float = 0f
 )
 
-enum class Gender { Male, Female, Other }
 enum class WeightUnit { KG, LBS }
-enum class ActivityLevel { Sedentary, Moderate, Active }
-enum class Climate { Cold, Mild, Hot }

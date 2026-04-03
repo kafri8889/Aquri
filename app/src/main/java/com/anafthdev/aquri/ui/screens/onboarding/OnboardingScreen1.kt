@@ -22,8 +22,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Female
 import androidx.compose.material.icons.filled.Male
-import androidx.compose.material.icons.filled.Transgender
 import androidx.compose.material.icons.filled.MonitorWeight
+import androidx.compose.material.icons.filled.Transgender
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.anafthdev.aquri.R
+import com.anafthdev.aquri.data.model.enum.Gender
 import com.anafthdev.aquri.ui.navigation.Destinations
 import com.anafthdev.aquri.ui.screens.onboarding.components.OnboardingBottomButton
 import com.anafthdev.aquri.ui.screens.onboarding.components.OnboardingCard
@@ -68,7 +69,7 @@ fun OnboardingScreen1(
         ) {
             OnboardingProgressIndicator(step = 0, totalSteps = 3)
             OnboardingHeader(
-                titleRes = R.string.onboarding,
+                titleRes = R.string.onboarding_basic_info,
                 subtitleRes = R.string.onboarding_subtitle
             )
             Spacer(modifier = Modifier.height(32.dp))
@@ -219,7 +220,8 @@ fun WeightInputSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 0.8.sp,
-                modifier = Modifier.padding(horizontal = 8.dp)
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
             )
 
             Row(
@@ -245,8 +247,8 @@ fun WeightInputSection(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(96.dp)
-                .clip(RoundedCornerShape(32.dp))
+                .height(80.dp)
+                .clip(RoundedCornerShape(24.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
                 .padding(horizontal = 24.dp)
         ) {
@@ -257,8 +259,9 @@ fun WeightInputSection(
                 Icon(
                     imageVector = Icons.Default.MonitorWeight,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
-                    modifier = Modifier.size(18.dp)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.32f),
+                    modifier = Modifier
+                        .size(24.dp)
                 )
 
                 Spacer(modifier = Modifier.size(22.dp))
@@ -279,7 +282,7 @@ fun WeightInputSection(
                                 Text(
                                     text = "00.0",
                                     style = MaterialTheme.typography.displaySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.32f),
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 36.sp
                                 )
@@ -292,7 +295,7 @@ fun WeightInputSection(
                 Text(
                     text = if (unit == WeightUnit.KG) stringResource(R.string.kilograms) else stringResource(R.string.pounds),
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.32f),
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(end = 8.dp)
                 )

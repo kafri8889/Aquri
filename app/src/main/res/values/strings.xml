@@ -4,7 +4,7 @@
     <string name="statistic">Statistic</string>
     <string name="mission">Mission</string>
     <string name="profile">Profile</string>
-    <string name="onboarding">Onboarding</string>
+    <string name="onboarding_basic_info">Tell us about yourself</string>
     <string name="next_step">Next Step</string>
     <string name="calculate_goal">Calculate Goal</string>
     <string name="lets_go">Let\'s Go!</string>
