@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,17 +22,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -63,6 +65,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -71,6 +74,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.anafthdev.aquri.data.model.entity.BottleEntity
+import com.anafthdev.aquri.data.model.enum.DrinkBottleIcon
+import com.anafthdev.aquri.ui.components.AquriDropdownIcon
 import com.anafthdev.aquri.ui.components.AquriDropdownMenu
 import com.anafthdev.aquri.ui.components.AquriDropdownMenuItem
 import kotlinx.coroutines.launch
@@ -202,9 +207,10 @@ fun ManageBottleScreen(
             }
             
             items(
-                items = defaultBottles,
+                count = defaultBottles.size,
                 span = { GridItemSpan(maxLineSpan) }
-            ) { bottle ->
+            ) { index ->
+                val bottle = defaultBottles[index]
                 val isAssigned = listOf(user?.bottleSlot1, user?.bottleSlot2, user?.bottleSlot3).contains(bottle.id)
                 BottleListItem(
                     bottle = bottle,
@@ -239,7 +245,8 @@ fun ManageBottleScreen(
                 }
             }
             
-            items(customBottles) { bottle ->
+            items(count = customBottles.size) { index ->
+                val bottle = customBottles[index]
                 val isAssignedToCurrentSlot = when(selectedSlot) {
                     1 -> user?.bottleSlot1 == bottle.id
                     2 -> user?.bottleSlot2 == bottle.id
@@ -368,7 +375,9 @@ fun DashboardSlot(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.FlashOn, // Placeholder
+                        painter = painterResource(
+                            id = bottle?.icon?.let { DrinkBottleIcon.fromString(it).resId } ?: DrinkBottleIcon.Bottle1.resId
+                        ),
                         contentDescription = null,
                         tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(24.dp)
@@ -439,7 +448,7 @@ fun BottleListItem(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.FlashOn,
+                        painter = painterResource(id = DrinkBottleIcon.fromString(bottle.icon).resId),
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
@@ -526,7 +535,7 @@ fun CustomBottleCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.FlashOn,
+                        painter = painterResource(id = DrinkBottleIcon.fromString(bottle.icon).resId),
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(28.dp)
@@ -551,12 +560,12 @@ fun CustomBottleCard(
                         items = listOf(
                             AquriDropdownMenuItem(
                                 text = "Edit",
-                                icon = Icons.Default.Edit,
+                                icon = AquriDropdownIcon.Vector(Icons.Default.Edit),
                                 onClick = onEdit
                             ),
                             AquriDropdownMenuItem(
                                 text = "Delete",
-                                icon = Icons.Default.Delete,
+                                icon = AquriDropdownIcon.Vector(Icons.Default.Delete),
                                 isDestructive = true,
                                 onClick = onDelete
                             )
@@ -645,6 +654,7 @@ fun CreateNewBottleCard(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CreateBottleBottomSheetContent(
     initialBottle: BottleEntity? = null,
@@ -658,11 +668,20 @@ fun CreateBottleBottomSheetContent(
             } ?: ""
         ) 
     }
+    var selectedIcon by remember { 
+        mutableStateOf(
+            initialBottle?.icon?.let { DrinkBottleIcon.fromString(it) } ?: DrinkBottleIcon.Bottle1
+        ) 
+    }
+
+    var nameError by remember { mutableStateOf<String?>(null) }
+    var volumeError by remember { mutableStateOf<String?>(null) }
     
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp)
             .padding(bottom = 32.dp)
     ) {
@@ -686,46 +705,79 @@ fun CreateBottleBottomSheetContent(
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Next
             ),
-            onValueChange = { name = it },
+            onValueChange = { 
+                name = it
+                if (nameError != null && it.isNotBlank()) nameError = null
+            },
+            isError = nameError != null,
+            supportingText = nameError?.let { { Text(it) } },
             placeholder = { Text("e.g., Office Carafe") },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp)
         )
         
         Spacer(modifier = Modifier.height(16.dp))
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
-                Text("VOLUME (ML)", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                OutlinedTextField(
-                    value = volume,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Decimal,
-                        imeAction = ImeAction.Done
-                    ),
-                    onValueChange = { input ->
-                        if (input.isEmpty() || input.all { it.isDigit() || it == '.' }) {
-                            if (input.count { it == '.' } <= 1) {
-                                volume = input
-                            }
+
+        Text("VOLUME (ML)", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+        OutlinedTextField(
+            value = volume,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Decimal,
+                imeAction = ImeAction.Done
+            ),
+            onValueChange = { input ->
+                if (input.isEmpty() || input.all { it.isDigit() || it == '.' }) {
+                    if (input.count { it == '.' } <= 1) {
+                        volume = input
+                        if (volumeError != null && input.isNotBlank()) {
+                            val vol = input.toFloatOrNull() ?: 0f
+                            if (vol > 0) volumeError = null
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
-                )
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
-                Text("ICON", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                OutlinedTextField(
-                    value = "Drop", // Mock
-                    onValueChange = { },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    readOnly = true
-                )
+                    }
+                }
+            },
+            isError = volumeError != null,
+            supportingText = volumeError?.let { { Text(it) } },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp)
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+
+        val icons = remember { DrinkBottleIcon.entries }
+        
+        Text("SELECT ICON", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+        
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            icons.forEach { icon ->
+                val isSelected = selectedIcon == icon
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        )
+                        .border(
+                            width = 2.dp,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        .clickable { selectedIcon = icon },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = icon.resId),
+                        contentDescription = null,
+                        tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
         
@@ -734,8 +786,18 @@ fun CreateBottleBottomSheetContent(
         Button(
             onClick = {
                 val vol = volume.toFloatOrNull() ?: 0f
-                if (name.isNotBlank() && vol > 0) {
-                    onSave(name, vol, initialBottle?.icon ?: "ic_bottle_custom")
+                val isNameValid = name.isNotBlank()
+
+                nameError = if (!isNameValid) "Bottle name cannot be empty" else null
+                volumeError = when {
+                    volume.isBlank() -> "Volume cannot be empty"
+                    vol <= 0 -> "Volume must be greater than 0"
+                    vol > 5000 -> "Volume seems too large (max 5000ml)"
+                    else -> null
+                }
+
+                if (isNameValid && volumeError == null) {
+                    onSave(name, vol, selectedIcon.name)
                 }
             },
             modifier = Modifier

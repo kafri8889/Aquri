@@ -25,7 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -41,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,6 +52,7 @@ import com.anafthdev.aquri.data.model.entity.DailySummaryEntity
 import com.anafthdev.aquri.data.model.entity.HydrationLogWithBottle
 import com.anafthdev.aquri.data.model.entity.UserEntity
 import com.anafthdev.aquri.data.model.entity.UserGamificationEntity
+import com.anafthdev.aquri.data.model.enum.DrinkBottleIcon
 import com.anafthdev.aquri.data.model.enum.DrinkType
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -310,12 +311,21 @@ private fun QuickRefillButton(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = if (bottle != null) Icons.Default.FlashOn else Icons.Default.Add,
-                contentDescription = null,
-                tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
-            )
+            if (bottle != null) {
+                Icon(
+                    painter = painterResource(id = DrinkBottleIcon.fromString(bottle.icon).resId),
+                    contentDescription = null,
+                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = bottle?.volumeMl?.toInt()?.toString() ?: "Empty",
@@ -576,7 +586,10 @@ private fun DrinkHistoryItem(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.FlashOn, // Placeholder
+                        painter = painterResource(
+                            id = history.bottle?.let { DrinkBottleIcon.fromString(it.icon).resId } 
+                                ?: DrinkBottleIcon.WaterBottle.resId
+                        ),
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
                         tint = color

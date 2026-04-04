@@ -3,6 +3,7 @@ package com.anafthdev.aquri.data.model.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.anafthdev.aquri.data.model.enum.DrinkBottleIcon
 import java.util.UUID
 
 /**
@@ -22,7 +23,7 @@ data class BottleEntity(
     val name: String,
     @ColumnInfo(name = "volume_ml")
     val volumeMl: Float,
-    val icon: String = "ic_bottle_default",
+    val icon: String = DrinkBottleIcon.Bottle1.name,
     @ColumnInfo(name = "is_custom")
     val isCustom: Boolean = false,
     @ColumnInfo(name = "created_at")
@@ -35,25 +36,25 @@ data class BottleEntity(
                 id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
                 name = "Small Glass",
                 volumeMl = 200f,
-                icon = "ic_glass_small"
+                icon = DrinkBottleIcon.Glass1.name
             ),
             BottleEntity(
                 id = UUID.fromString("00000000-0000-0000-0000-000000000002"),
                 name = "Medium Glass",
                 volumeMl = 330f,
-                icon = "ic_glass_medium"
+                icon = DrinkBottleIcon.Glass2.name
             ),
             BottleEntity(
                 id = UUID.fromString("00000000-0000-0000-0000-000000000003"),
                 name = "Sports Bottle",
                 volumeMl = 500f,
-                icon = "ic_bottle_sports"
+                icon = DrinkBottleIcon.WaterBottle.name
             ),
             BottleEntity(
                 id = UUID.fromString("00000000-0000-0000-0000-000000000004"),
                 name = "Large Bottle",
                 volumeMl = 750f,
-                icon = "ic_bottle_large"
+                icon = DrinkBottleIcon.WaterBottleLarge.name
             )
         )
     }

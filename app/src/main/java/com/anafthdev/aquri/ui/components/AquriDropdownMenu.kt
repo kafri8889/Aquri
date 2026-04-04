@@ -13,13 +13,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 
+sealed class AquriDropdownIcon {
+    data class Vector(val imageVector: ImageVector) : AquriDropdownIcon()
+    data class Resource(val resId: Int) : AquriDropdownIcon()
+}
+
 data class AquriDropdownMenuItem(
     val text: String,
-    val icon: ImageVector,
+    val icon: AquriDropdownIcon,
     val onClick: () -> Unit,
     val isDestructive: Boolean = false
 )
@@ -61,12 +67,24 @@ fun AquriDropdownMenu(
                         onDismissRequest()
                     },
                     leadingIcon = {
-                        Icon(
-                            imageVector = item.icon,
-                            contentDescription = null,
-                            tint = if (item.isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        when (val icon = item.icon) {
+                            is AquriDropdownIcon.Vector -> {
+                                Icon(
+                                    imageVector = icon.imageVector,
+                                    contentDescription = null,
+                                    tint = if (item.isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            is AquriDropdownIcon.Resource -> {
+                                Icon(
+                                    painter = painterResource(id = icon.resId),
+                                    contentDescription = null,
+                                    tint = if (item.isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
                     },
                     modifier = Modifier
                         .padding(horizontal = 8.dp, vertical = 2.dp)
