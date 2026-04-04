@@ -4,6 +4,7 @@ import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.anafthdev.aquri.data.Constant
+import com.anafthdev.aquri.data.model.entity.BottleEntity
 import com.anafthdev.aquri.data.model.entity.UserEntity
 import com.anafthdev.aquri.data.model.enum.ActivityLevel
 import com.anafthdev.aquri.data.model.enum.Climate
@@ -61,7 +62,10 @@ class OnboardingViewModel @Inject constructor(
                     weightKg = state.weight.toFloatOrNull() ?: 0f,
                     activityLevel = state.activityLevel,
                     climate = state.climate,
-                    dailyGoalMl = state.dailyGoal
+                    dailyGoalMl = state.dailyGoal,
+                    bottleSlot1 = BottleEntity.predefinedBottles[0].id,
+                    bottleSlot2 = BottleEntity.predefinedBottles[1].id,
+                    bottleSlot3 = BottleEntity.predefinedBottles[2].id
                 )
             )
         }

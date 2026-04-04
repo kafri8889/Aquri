@@ -33,6 +33,9 @@ sealed class Destinations {
 
     @Serializable
     data object Onboarding3 : Destinations()
+
+    @Serializable
+    data object ManageBottle : Destinations()
 }
 
 enum class NavigationItem(

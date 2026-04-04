@@ -41,6 +41,12 @@ data class UserEntity(
     val climate: Climate = Climate.Mild,
     @ColumnInfo(name = "daily_goal_ml")
     val dailyGoalMl: Float = 0f,
+    @ColumnInfo(name = "bottle_slot_1")
+    val bottleSlot1: UUID? = null,
+    @ColumnInfo(name = "bottle_slot_2")
+    val bottleSlot2: UUID? = null,
+    @ColumnInfo(name = "bottle_slot_3")
+    val bottleSlot3: UUID? = null,
     @ColumnInfo(name = "is_pro")
     val isPro: Boolean = false,
     @ColumnInfo(name = "created_at")

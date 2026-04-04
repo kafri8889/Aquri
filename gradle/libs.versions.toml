@@ -48,6 +48,7 @@ firebaseBom = "34.11.0"
 
 # KSP (untuk Room & Hilt annotation processor)
 ksp = "2.3.6"
+uiTextGoogleFonts = "1.10.6"
 
 
 [libraries]
@@ -112,6 +113,7 @@ androidx-compose-material-icons-extended = { group = "androidx.compose.material"
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
+androidx-compose-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
 
 
 [plugins]

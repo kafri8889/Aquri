@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -59,6 +60,7 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
+    onManageBottle: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
 
@@ -67,6 +69,7 @@ fun HomeScreen(
     val gamification by viewModel.gamification.collectAsState()
     val histories by viewModel.recentLogs.collectAsStateWithLifecycle()
     val nextReminderTime by viewModel.nextReminderTime.collectAsStateWithLifecycle()
+    val slotBottles by viewModel.slotBottles.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -88,10 +91,8 @@ fun HomeScreen(
 
             item {
                 QuickRefillSection(
-                    bottle1 = BottleEntity.predefinedBottles[0],
-                    bottle2 = BottleEntity.predefinedBottles[1],
-                    bottle3 = BottleEntity.predefinedBottles[2],
-                    onCustomQuickRefillClicked = {},
+                    bottles = slotBottles,
+                    onCustomQuickRefillClicked = onManageBottle,
                     onDrink = viewModel::drink
                 )
             }
@@ -237,9 +238,7 @@ private fun HeroSection(
 
 @Composable
 private fun QuickRefillSection(
-    bottle1: BottleEntity,
-    bottle2: BottleEntity,
-    bottle3: BottleEntity,
+    bottles: List<BottleEntity?>,
     onCustomQuickRefillClicked: () -> Unit,
     onDrink: (BottleEntity) -> Unit,
 ) {
@@ -276,35 +275,27 @@ private fun QuickRefillSection(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            QuickRefillButton(
-                amount = bottle1.volumeMl.toInt(),
-                isSelected = false,
-                onClick = { onDrink(bottle1) },
-                modifier = Modifier.weight(1f)
-            )
-            QuickRefillButton(
-                amount = bottle2.volumeMl.toInt(),
-                isSelected = false,
-                onClick = { onDrink(bottle2) },
-                modifier = Modifier.weight(1f)
-            )
-            QuickRefillButton(
-                amount = bottle3.volumeMl.toInt(),
-                isSelected = false,
-                onClick = { onDrink(bottle3) },
-                modifier = Modifier.weight(1f)
-            )
+            bottles.forEach { bottle ->
+                QuickRefillButton(
+                    bottle = bottle,
+                    onClick = {
+                        if (bottle != null) onDrink(bottle)
+                        else onCustomQuickRefillClicked()
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
     }
 }
 
 @Composable
 private fun QuickRefillButton(
-    amount: Int,
-    isSelected: Boolean,
+    bottle: BottleEntity?,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
+    val isSelected = false // We don't have selection state yet for drinking
     Card(
         shape = RoundedCornerShape(24.dp),
         onClick = onClick,
@@ -320,23 +311,25 @@ private fun QuickRefillButton(
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
-                imageVector = Icons.Default.FlashOn, // Placeholder icon
+                imageVector = if (bottle != null) Icons.Default.FlashOn else Icons.Default.Add,
                 contentDescription = null,
                 tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = amount.toString(),
+                text = bottle?.volumeMl?.toInt()?.toString() ?: "Empty",
                 style = MaterialTheme.typography.titleLarge,
                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold
             )
-            Text(
-                text = "ml",
-                style = MaterialTheme.typography.labelSmall,
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (bottle != null) {
+                Text(
+                    text = "ml",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
@@ -556,7 +549,7 @@ private fun DrinkHistoryItem(
     val timeFormatter = remember { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
     val time = timeFormatter.format(Date(history.log.loggedAt))
     
-    val name = history.bottle?.name ?: history.log.drinkType.name
+    val name = history.log.bottleName ?: history.bottle?.name ?: history.log.drinkType.name
     val color = when (history.log.drinkType) {
         DrinkType.Water -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.secondary

@@ -27,6 +27,8 @@ data class HydrationLogEntity(
     val bottleId: UUID? = null,
     @ColumnInfo(name = "amount_ml")
     val amountMl: Float,
+    @ColumnInfo(name = "bottle_name")
+    val bottleName: String? = null,
     @ColumnInfo(name = "drink_type")
     val drinkType: DrinkType = DrinkType.Water,
     @ColumnInfo(name = "logged_at")

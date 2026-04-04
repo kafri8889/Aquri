@@ -15,6 +15,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
@@ -61,6 +62,18 @@ class HomeViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    val slotBottles: StateFlow<List<BottleEntity?>> = combine(user.filterNotNull(), bottles) { user, bottles ->
+        listOf(
+            bottles.find { it.id == user.bottleSlot1 },
+            bottles.find { it.id == user.bottleSlot2 },
+            bottles.find { it.id == user.bottleSlot3 }
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = listOf(null, null, null)
+    )
 
     val recentLogs: StateFlow<List<HydrationLogWithBottle>> = user
         .filterNotNull()
@@ -125,6 +138,7 @@ class HomeViewModel @Inject constructor(
                     userId = currentUser.id,
                     bottleId = bottle.id,
                     amountMl = bottle.volumeMl,
+                    bottleName = bottle.name,
                     drinkType = currentUser.gender.let { 
                         // Just a placeholder, drinkType should ideally be from bottle or UI
                         DrinkType.Water

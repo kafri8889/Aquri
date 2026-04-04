@@ -7,6 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.anafthdev.aquri.ui.screens.home.HomeScreen
+import com.anafthdev.aquri.ui.screens.manage_bottle.ManageBottleScreen
 import com.anafthdev.aquri.ui.screens.mission.MissionScreen
 import com.anafthdev.aquri.ui.screens.onboarding.OnboardingScreen1
 import com.anafthdev.aquri.ui.screens.onboarding.OnboardingScreen2
@@ -38,7 +39,18 @@ fun MainNavGraph(
             OnboardingScreen3(navController, onboardingViewModel)
         }
         composable<Destinations.Home> {
-            HomeScreen()
+            HomeScreen(
+                onManageBottle = {
+                    navController.navigate(Destinations.ManageBottle)
+                }
+            )
+        }
+        composable<Destinations.ManageBottle> {
+            ManageBottleScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
         composable<Destinations.Statistic> {
             StatisticScreen()
