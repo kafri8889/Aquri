@@ -35,7 +35,7 @@ coroutines = "1.10.2"
 kotlinxSerialization = "1.10.0"
 
 # Chart
-vico = "3.0.3"
+vico = "3.1.0"
 
 # Splash Screen
 splashscreen = "1.2.0"

@@ -11,6 +11,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowCompat
 import com.anafthdev.aquri.ui.screens.main.MainScreen
 import com.anafthdev.aquri.ui.theme.AquriTheme
+import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
+import com.patrykandpatrick.vico.compose.m3.common.rememberM3VicoTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -37,7 +39,12 @@ class MainActivity : ComponentActivity() {
             }
             
             AquriTheme(darkTheme = darkTheme) {
-                MainScreen()
+                rememberM3VicoTheme()
+                ProvideVicoTheme(
+                    theme = rememberM3VicoTheme()
+                ) {
+                    MainScreen()
+                }
             }
         }
     }
