@@ -1,0 +1,142 @@
+package com.anafthdev.aquri.ui.screens.statistic.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.anafthdev.aquri.data.model.enum.DrinkType
+
+@Composable
+fun BeverageTypeCard(
+    beverageDistribution: Map<DrinkType, Float>,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 1.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "Beverage Types",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                // Pie Chart Placeholder (left side)
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Placeholder for Pie Chart as requested
+                    Text(
+                        text = "Pie Chart",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.Gray
+                    )
+                }
+
+                // Legend (right side)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (beverageDistribution.isEmpty()) {
+                        Text(
+                            text = "No data recorded",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray
+                        )
+                    } else {
+                        beverageDistribution.forEach { (type, percentage) ->
+                            BeverageLegendItem(
+                                type = type,
+                                percentage = percentage
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BeverageLegendItem(
+    type: DrinkType,
+    percentage: Float,
+    modifier: Modifier = Modifier
+) {
+    val color = when (type) {
+        DrinkType.Water -> Color(0xFF006064)
+        DrinkType.Tea -> Color(0xFF26A69A)
+        DrinkType.Coffee -> Color(0xFFEF6C00)
+        DrinkType.Juice -> Color(0xFFFDD835)
+        DrinkType.Soda -> Color(0xFFE53935)
+        DrinkType.SportsDrink -> Color(0xFF1E88E5)
+        DrinkType.Milk -> Color(0xFFBDBDBD)
+        DrinkType.Other -> Color(0xFF7E57C2)
+    }
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .background(color, CircleShape)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = type.name,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.DarkGray
+            )
+        }
+
+        Text(
+            text = "${percentage.toInt()}%",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black
+        )
+    }
+}

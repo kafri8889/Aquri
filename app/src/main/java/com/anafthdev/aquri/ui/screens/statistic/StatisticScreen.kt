@@ -55,6 +55,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.anafthdev.aquri.data.model.enum.DrinkType
+import com.anafthdev.aquri.ui.screens.statistic.components.BeverageTypeCard
 import com.anafthdev.aquri.ui.screens.statistic.components.DailyStatisticsSection
 import com.anafthdev.aquri.ui.screens.statistic.components.StatisticFilterChips
 import com.anafthdev.aquri.ui.screens.statistic.components.StatisticPeriodSelector
@@ -85,6 +87,7 @@ fun StatisticScreen(
     val peakActivityHour by viewModel.peakActivityHour.collectAsStateWithLifecycle()
     val logCount by viewModel.logCount.collectAsStateWithLifecycle()
     val topBottleName by viewModel.topBottleName.collectAsStateWithLifecycle()
+    val beverageDistribution by viewModel.beverageDistribution.collectAsStateWithLifecycle()
     val selectedDaySummary by viewModel.selectedDaySummary.collectAsStateWithLifecycle()
 
     StatisticScreenContent(
@@ -94,6 +97,7 @@ fun StatisticScreen(
         peakActivityHour = peakActivityHour,
         logCount = logCount,
         topBottleName = topBottleName,
+        beverageDistribution = beverageDistribution,
         totalMl = selectedDaySummary?.totalMl ?: 0f,
         goalMl = selectedDaySummary?.goalMl ?: 0f,
         onFilterSelected = viewModel::onFilterSelected,
@@ -113,6 +117,7 @@ fun StatisticScreenContent(
     peakActivityHour: Int?,
     logCount: Int,
     topBottleName: String?,
+    beverageDistribution: Map<DrinkType, Float>,
     totalMl: Float,
     goalMl: Float,
     onFilterSelected: (StatisticFilter) -> Unit,
@@ -273,6 +278,20 @@ fun StatisticScreenContent(
                                 .animateItem()
                         )
                     }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                item {
+                    BeverageTypeCard(
+                        beverageDistribution = beverageDistribution,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .animateItem()
+                    )
                 }
 
                 if (selectedFilter == StatisticFilter.Weekly) {
@@ -474,6 +493,11 @@ private fun StatisticScreenPreview() {
             peakActivityHour = 8,
             logCount = 7,
             topBottleName = "Glass Cup",
+            beverageDistribution = mapOf(
+                DrinkType.Water to 75f,
+                DrinkType.Tea to 15f,
+                DrinkType.Coffee to 10f
+            ),
             totalMl = 1650f,
             goalMl = 2500f,
             selectedDate = System.currentTimeMillis(),
