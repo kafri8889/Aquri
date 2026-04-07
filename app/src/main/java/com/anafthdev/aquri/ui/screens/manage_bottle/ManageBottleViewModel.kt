@@ -3,6 +3,7 @@ package com.anafthdev.aquri.ui.screens.manage_bottle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.anafthdev.aquri.data.model.entity.BottleEntity
+import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
 import com.anafthdev.aquri.data.model.entity.UserEntity
 import com.anafthdev.aquri.data.repository.HydrationRepository
 import com.anafthdev.aquri.data.repository.UserRepository
@@ -44,6 +45,29 @@ class ManageBottleViewModel @Inject constructor(
         )
 
     val customBottles: StateFlow<List<BottleEntity>> = bottles
+        .map { list -> list.filter { it.isCustom } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val drinkTypes: StateFlow<List<DrinkTypeEntity>> = hydrationRepository.getAllDrinkTypes()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val defaultDrinkTypes: StateFlow<List<DrinkTypeEntity>> = drinkTypes
+        .map { list -> list.filter { !it.isCustom } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val customDrinkTypes: StateFlow<List<DrinkTypeEntity>> = drinkTypes
         .map { list -> list.filter { it.isCustom } }
         .stateIn(
             scope = viewModelScope,
@@ -108,6 +132,30 @@ class ManageBottleViewModel @Inject constructor(
             }
 
             hydrationRepository.deleteBottle(bottle)
+        }
+    }
+
+    fun createCustomDrinkType(name: String, hexColor: String) {
+        viewModelScope.launch {
+            hydrationRepository.insertDrinkType(
+                DrinkTypeEntity(
+                    name = name,
+                    hexColor = hexColor,
+                    isCustom = true
+                )
+            )
+        }
+    }
+
+    fun updateCustomDrinkType(drinkType: DrinkTypeEntity) {
+        viewModelScope.launch {
+            hydrationRepository.updateDrinkType(drinkType)
+        }
+    }
+
+    fun deleteCustomDrinkType(drinkType: DrinkTypeEntity) {
+        viewModelScope.launch {
+            hydrationRepository.deleteDrinkType(drinkType)
         }
     }
 }

@@ -3,6 +3,7 @@ package com.anafthdev.aquri.data.repository
 import com.anafthdev.aquri.data.database.dao.HydrationDao
 import com.anafthdev.aquri.data.model.entity.BottleEntity
 import com.anafthdev.aquri.data.model.entity.DailySummaryEntity
+import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
 import com.anafthdev.aquri.data.model.entity.HydrationLogEntity
 import com.anafthdev.aquri.data.model.entity.HydrationLogWithBottle
 import kotlinx.coroutines.flow.Flow
@@ -29,6 +30,8 @@ class HydrationRepository @Inject constructor(
 
     suspend fun insertLog(log: HydrationLogEntity) = hydrationDao.insertLog(log)
 
+    suspend fun updateLog(log: HydrationLogEntity) = hydrationDao.updateLog(log)
+
     suspend fun deleteLog(log: HydrationLogEntity) = hydrationDao.deleteLog(log)
 
     // --- Bottles ---
@@ -42,6 +45,18 @@ class HydrationRepository @Inject constructor(
     suspend fun updateBottle(bottle: BottleEntity) = hydrationDao.updateBottle(bottle)
 
     suspend fun deleteBottle(bottle: BottleEntity) = hydrationDao.deleteBottle(bottle)
+
+    // --- Drink Types ---
+
+    fun getAllDrinkTypes(): Flow<List<DrinkTypeEntity>> = hydrationDao.getAllDrinkTypes()
+
+    suspend fun getDrinkTypeById(id: UUID): DrinkTypeEntity? = hydrationDao.getDrinkTypeById(id)
+
+    suspend fun insertDrinkType(drinkType: DrinkTypeEntity) = hydrationDao.insertDrinkType(drinkType)
+
+    suspend fun updateDrinkType(drinkType: DrinkTypeEntity) = hydrationDao.updateDrinkType(drinkType)
+
+    suspend fun deleteDrinkType(drinkType: DrinkTypeEntity) = hydrationDao.deleteDrinkType(drinkType)
 
     // --- Summaries ---
 

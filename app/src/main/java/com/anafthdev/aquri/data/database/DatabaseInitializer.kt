@@ -1,6 +1,7 @@
 package com.anafthdev.aquri.data.database
 
 import com.anafthdev.aquri.data.model.entity.BottleEntity
+import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
 import com.anafthdev.aquri.data.repository.HydrationRepository
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -14,6 +15,11 @@ class DatabaseInitializer @Inject constructor(
         val bottles = hydrationRepository.getAllBottles().first()
         if (bottles.isEmpty()) {
             BottleEntity.predefinedBottles.forEach { hydrationRepository.insertBottle(it) }
+        }
+
+        val drinkTypes = hydrationRepository.getAllDrinkTypes().first()
+        if (drinkTypes.isEmpty()) {
+            DrinkTypeEntity.predefinedDrinkTypes.forEach { hydrationRepository.insertDrinkType(it) }
         }
     }
 }

@@ -21,11 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.anafthdev.aquri.data.model.enum.DrinkType
+import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
 
 @Composable
 fun BeverageTypeCard(
-    beverageDistribution: Map<DrinkType, Float>,
+    beverageDistribution: Map<DrinkTypeEntity, Float>,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -61,7 +61,6 @@ fun BeverageTypeCard(
                         .padding(8.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Placeholder for Pie Chart as requested
                     Text(
                         text = "Pie Chart",
                         style = MaterialTheme.typography.labelSmall,
@@ -96,19 +95,14 @@ fun BeverageTypeCard(
 
 @Composable
 private fun BeverageLegendItem(
-    type: DrinkType,
+    type: DrinkTypeEntity,
     percentage: Float,
     modifier: Modifier = Modifier
 ) {
-    val color = when (type) {
-        DrinkType.Water -> Color(0xFF006064)
-        DrinkType.Tea -> Color(0xFF26A69A)
-        DrinkType.Coffee -> Color(0xFFEF6C00)
-        DrinkType.Juice -> Color(0xFFFDD835)
-        DrinkType.Soda -> Color(0xFFE53935)
-        DrinkType.SportsDrink -> Color(0xFF1E88E5)
-        DrinkType.Milk -> Color(0xFFBDBDBD)
-        DrinkType.Other -> Color(0xFF7E57C2)
+    val color = try {
+        Color(android.graphics.Color.parseColor(type.hexColor))
+    } catch (e: Exception) {
+        Color.Gray
     }
 
     Row(

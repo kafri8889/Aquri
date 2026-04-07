@@ -9,6 +9,7 @@ import androidx.room.Transaction
 import androidx.room.Update
 import com.anafthdev.aquri.data.model.entity.BottleEntity
 import com.anafthdev.aquri.data.model.entity.DailySummaryEntity
+import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
 import com.anafthdev.aquri.data.model.entity.HydrationLogEntity
 import com.anafthdev.aquri.data.model.entity.HydrationLogWithBottle
 import kotlinx.coroutines.flow.Flow
@@ -30,6 +31,9 @@ interface HydrationDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertLog(log: HydrationLogEntity)
 
+    @Update
+    suspend fun updateLog(log: HydrationLogEntity)
+
     @Delete
     suspend fun deleteLog(log: HydrationLogEntity)
 
@@ -49,6 +53,23 @@ interface HydrationDao {
 
     @Delete
     suspend fun deleteBottle(bottle: BottleEntity)
+
+    // --- Drink Types ---
+
+    @Query("SELECT * FROM drink_types ORDER BY name ASC")
+    fun getAllDrinkTypes(): Flow<List<DrinkTypeEntity>>
+
+    @Query("SELECT * FROM drink_types WHERE id = :id")
+    suspend fun getDrinkTypeById(id: UUID): DrinkTypeEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDrinkType(drinkType: DrinkTypeEntity)
+
+    @Update
+    suspend fun updateDrinkType(drinkType: DrinkTypeEntity)
+
+    @Delete
+    suspend fun deleteDrinkType(drinkType: DrinkTypeEntity)
 
     // --- Summaries ---
 

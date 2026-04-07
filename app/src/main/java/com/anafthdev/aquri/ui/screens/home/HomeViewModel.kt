@@ -4,11 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.anafthdev.aquri.data.model.entity.BottleEntity
 import com.anafthdev.aquri.data.model.entity.DailySummaryEntity
+import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
 import com.anafthdev.aquri.data.model.entity.HydrationLogEntity
 import com.anafthdev.aquri.data.model.entity.HydrationLogWithBottle
 import com.anafthdev.aquri.data.model.entity.UserEntity
 import com.anafthdev.aquri.data.model.entity.UserGamificationEntity
-import com.anafthdev.aquri.data.model.enum.DrinkType
 import com.anafthdev.aquri.data.repository.HydrationRepository
 import com.anafthdev.aquri.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -57,6 +58,13 @@ class HomeViewModel @Inject constructor(
         )
 
     val bottles: StateFlow<List<BottleEntity>> = hydrationRepository.getAllBottles()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val drinkTypes: StateFlow<List<DrinkTypeEntity>> = hydrationRepository.getAllDrinkTypes()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -128,40 +136,91 @@ class HomeViewModel @Inject constructor(
             initialValue = null
         )
 
-    fun drink(bottle: BottleEntity) {
+    fun logDrink(bottle: BottleEntity, drinkType: DrinkTypeEntity, timestamp: Long) {
         viewModelScope.launch {
             val currentUser = user.value ?: return@launch
             
-            // Log the drink
+            val logDate = Calendar.getInstance().apply {
+                timeInMillis = timestamp
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+
             hydrationRepository.insertLog(
                 HydrationLogEntity(
                     userId = currentUser.id,
                     bottleId = bottle.id,
                     amountMl = bottle.volumeMl,
                     bottleName = bottle.name,
-                    drinkType = currentUser.gender.let { 
-                        // Just a placeholder, drinkType should ideally be from bottle or UI
-                        DrinkType.Water
-                    },
-                    logDate = midnightDate
+                    drinkTypeId = drinkType.id,
+                    loggedAt = timestamp,
+                    logDate = logDate
                 )
             )
 
-            // Update daily summary
-            val currentSummary = dailySummary.value ?: DailySummaryEntity(
-                userId = currentUser.id,
-                summaryDate = midnightDate,
-                goalMl = currentUser.dailyGoalMl
-            )
-
-            val newTotalMl = currentSummary.totalMl + bottle.volumeMl
-            hydrationRepository.insertDailySummary(
-                currentSummary.copy(
-                    totalMl = newTotalMl,
-                    completionPct = newTotalMl / currentSummary.goalMl,
-                    goalReached = newTotalMl >= currentSummary.goalMl
-                )
-            )
+            updateSummaryForDate(currentUser, logDate)
         }
+    }
+
+    fun updateLog(log: HydrationLogEntity, bottle: BottleEntity, drinkType: DrinkTypeEntity, timestamp: Long) {
+        viewModelScope.launch {
+            val currentUser = user.value ?: return@launch
+            val oldLogDate = log.logDate
+            
+            val newLogDate = Calendar.getInstance().apply {
+                timeInMillis = timestamp
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+
+            hydrationRepository.updateLog(
+                log.copy(
+                    bottleId = bottle.id,
+                    amountMl = bottle.volumeMl,
+                    bottleName = bottle.name,
+                    drinkTypeId = drinkType.id,
+                    loggedAt = timestamp,
+                    logDate = newLogDate
+                )
+            )
+
+            updateSummaryForDate(currentUser, newLogDate)
+            if (newLogDate != oldLogDate) {
+                updateSummaryForDate(currentUser, oldLogDate)
+            }
+        }
+    }
+
+    fun deleteLog(log: HydrationLogEntity) {
+        viewModelScope.launch {
+            val currentUser = user.value ?: return@launch
+            val logDate = log.logDate
+            
+            hydrationRepository.deleteLog(log)
+            updateSummaryForDate(currentUser, logDate)
+        }
+    }
+
+    private suspend fun updateSummaryForDate(user: UserEntity, date: Long) {
+        val logs = hydrationRepository.getLogsWithBottleByDate(date).first()
+        val totalMl = logs.sumOf { it.log.amountMl.toDouble() }.toFloat()
+        
+        val currentSummary = hydrationRepository.getDailySummary(date).first() ?: DailySummaryEntity(
+            userId = user.id,
+            summaryDate = date,
+            goalMl = user.dailyGoalMl
+        )
+
+        hydrationRepository.insertDailySummary(
+            currentSummary.copy(
+                totalMl = totalMl,
+                completionPct = if (currentSummary.goalMl > 0) totalMl / currentSummary.goalMl else 0f,
+                goalReached = totalMl >= currentSummary.goalMl
+            )
+        )
     }
 }

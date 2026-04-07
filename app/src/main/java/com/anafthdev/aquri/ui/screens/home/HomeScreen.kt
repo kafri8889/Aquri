@@ -25,21 +25,34 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -53,11 +66,16 @@ import com.anafthdev.aquri.data.model.entity.HydrationLogWithBottle
 import com.anafthdev.aquri.data.model.entity.UserEntity
 import com.anafthdev.aquri.data.model.entity.UserGamificationEntity
 import com.anafthdev.aquri.data.model.enum.DrinkBottleIcon
-import com.anafthdev.aquri.data.model.enum.DrinkType
+import com.anafthdev.aquri.ui.components.AquriDropdownIcon
+import com.anafthdev.aquri.ui.components.AquriDropdownMenu
+import com.anafthdev.aquri.ui.components.AquriDropdownMenuItem
+import com.anafthdev.aquri.ui.screens.home.components.LogDrinkBottomSheetContent
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
@@ -71,6 +89,16 @@ fun HomeScreen(
     val histories by viewModel.recentLogs.collectAsStateWithLifecycle()
     val nextReminderTime by viewModel.nextReminderTime.collectAsStateWithLifecycle()
     val slotBottles by viewModel.slotBottles.collectAsStateWithLifecycle()
+    val bottles by viewModel.bottles.collectAsStateWithLifecycle()
+    val drinkTypes by viewModel.drinkTypes.collectAsStateWithLifecycle()
+
+    var showBottomSheet by remember { mutableStateOf(false) }
+    var selectedLog by remember { mutableStateOf<HydrationLogWithBottle?>(null) }
+    var selectedBottle by remember { mutableStateOf<BottleEntity?>(null) }
+    var deletingLog by remember { mutableStateOf<HydrationLogWithBottle?>(null) }
+    
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -94,15 +122,108 @@ fun HomeScreen(
                 QuickRefillSection(
                     bottles = slotBottles,
                     onCustomQuickRefillClicked = onManageBottle,
-                    onDrink = viewModel::drink
+                    onDrinkClick = { bottle ->
+                        selectedBottle = bottle
+                        selectedLog = null
+                        showBottomSheet = true
+                    }
                 )
+            }
+
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            selectedBottle = null
+                            selectedLog = null
+                            showBottomSheet = true
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = "Choose Bottle", fontWeight = FontWeight.Bold)
+                    }
+                }
             }
 
             drinkHistorySection(
                 nextReminderTime = nextReminderTime,
-                histories = histories
+                histories = histories,
+                onEdit = { log ->
+                    selectedLog = log
+                    selectedBottle = null
+                    showBottomSheet = true
+                },
+                onDelete = { log ->
+                    deletingLog = log
+                }
             )
         }
+    }
+
+    if (showBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { 
+                showBottomSheet = false
+                selectedLog = null
+                selectedBottle = null
+            },
+            sheetState = sheetState
+        ) {
+            LogDrinkBottomSheetContent(
+                bottles = bottles,
+                drinkTypes = drinkTypes,
+                existingLog = selectedLog,
+                initialSelectedBottle = selectedBottle,
+                onSave = { bottle, type, time ->
+                    if (selectedLog != null) {
+                        viewModel.updateLog(selectedLog!!.log, bottle, type, time)
+                    } else {
+                        viewModel.logDrink(bottle, type, time)
+                    }
+                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        if (!sheetState.isVisible) {
+                            showBottomSheet = false
+                            selectedLog = null
+                            selectedBottle = null
+                        }
+                    }
+                }
+            )
+        }
+    }
+
+    if (deletingLog != null) {
+        AlertDialog(
+            onDismissRequest = { deletingLog = null },
+            title = { Text("Delete Log") },
+            text = { Text("Are you sure you want to delete this drink entry? The daily total will be updated.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteLog(deletingLog!!.log)
+                        deletingLog = null
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deletingLog = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -116,7 +237,6 @@ private fun HeroSection(
     val totalMl = dailySummary?.totalMl ?: 0f
     val goalMl = dailySummary?.goalMl?.takeIf { it > 0 } ?: user?.dailyGoalMl ?: Constant.MIN_DAILY_GOAL
     val progress = if (goalMl > 0) totalMl / goalMl else 0f
-    val currentStreak = gamification?.currentStreak ?: 0
 
     Box(
         modifier = modifier
@@ -124,7 +244,6 @@ private fun HeroSection(
             .padding(horizontal = 24.dp)
             .padding(top = 24.dp)
     ) {
-        // Hero background card
         Card(
             shape = RoundedCornerShape(48.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -136,7 +255,6 @@ private fun HeroSection(
                 .size(288.dp, 320.dp)
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                // Wave Animation
                 WaveAnimation(
                     modifier = Modifier.fillMaxSize(),
                     progress = progress,
@@ -145,7 +263,6 @@ private fun HeroSection(
                     frequency = 0.015f
                 )
 
-                // Content Overlay
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
@@ -185,55 +302,6 @@ private fun HeroSection(
                 }
             }
         }
-
-        // Floating Streak Card
-//        Card(
-//            shape = RoundedCornerShape(32.dp),
-//            modifier = Modifier
-//                .align(Alignment.BottomCenter)
-//                .padding(bottom = 24.dp)
-//                .height(90.dp)
-//                .width(268.dp),
-//            colors = CardDefaults.cardColors(
-//                containerColor = MaterialTheme.colorScheme.surface
-//            ),
-//            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-//        ) {
-//            Row(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .padding(horizontal = 21.dp),
-//                verticalAlignment = Alignment.CenterVertically
-//            ) {
-//                Box(
-//                    modifier = Modifier
-//                        .size(48.dp)
-//                        .background(MaterialTheme.colorScheme.tertiaryContainer, CircleShape),
-//                    contentAlignment = Alignment.Center
-//                ) {
-//                    Icon(
-//                        imageVector = Icons.Default.FlashOn,
-//                        contentDescription = null,
-//                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
-//                        modifier = Modifier.size(22.dp)
-//                    )
-//                }
-//                Spacer(modifier = Modifier.width(16.dp))
-//                Column {
-//                    Text(
-//                        text = "Hydration Streak",
-//                        style = MaterialTheme.typography.bodyMedium,
-//                        fontWeight = FontWeight.Bold,
-//                        color = MaterialTheme.colorScheme.onSurface
-//                    )
-//                    Text(
-//                        text = "$currentStreak Days of reaching your goal!",
-//                        style = MaterialTheme.typography.bodySmall,
-//                        color = MaterialTheme.colorScheme.onSurfaceVariant
-//                    )
-//                }
-//            }
-//        }
     }
 }
 
@@ -241,7 +309,7 @@ private fun HeroSection(
 private fun QuickRefillSection(
     bottles: List<BottleEntity?>,
     onCustomQuickRefillClicked: () -> Unit,
-    onDrink: (BottleEntity) -> Unit,
+    onDrinkClick: (BottleEntity) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -280,7 +348,7 @@ private fun QuickRefillSection(
                 QuickRefillButton(
                     bottle = bottle,
                     onClick = {
-                        if (bottle != null) onDrink(bottle)
+                        if (bottle != null) onDrinkClick(bottle)
                         else onCustomQuickRefillClicked()
                     },
                     modifier = Modifier.weight(1f)
@@ -296,15 +364,13 @@ private fun QuickRefillButton(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
-    val isSelected = false // We don't have selection state yet for drinking
     Card(
         shape = RoundedCornerShape(24.dp),
         onClick = onClick,
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
-        modifier = modifier
-            .height(112.dp)
+        modifier = modifier.height(112.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -315,14 +381,14 @@ private fun QuickRefillButton(
                 Icon(
                     painter = painterResource(id = DrinkBottleIcon.fromString(bottle.icon).resId),
                     contentDescription = null,
-                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant, // logic slightly simplified
                     modifier = Modifier.size(20.dp)
                 )
             } else {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = null,
-                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -330,14 +396,14 @@ private fun QuickRefillButton(
             Text(
                 text = bottle?.volumeMl?.toInt()?.toString() ?: "Empty",
                 style = MaterialTheme.typography.titleLarge,
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold
             )
             if (bottle != null) {
                 Text(
                     text = "ml",
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -346,7 +412,9 @@ private fun QuickRefillButton(
 
 private fun LazyListScope.drinkHistorySection(
     nextReminderTime: Long?,
-    histories: List<HydrationLogWithBottle>
+    histories: List<HydrationLogWithBottle>,
+    onEdit: (HydrationLogWithBottle) -> Unit,
+    onDelete: (HydrationLogWithBottle) -> Unit
 ) {
     item {
         Text(
@@ -406,6 +474,8 @@ private fun LazyListScope.drinkHistorySection(
             ) {
                 DrinkHistoryItem(
                     history = history,
+                    onEdit = { onEdit(history) },
+                    onDelete = { onDelete(history) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -554,18 +624,20 @@ private fun NextReminderCard(
 @Composable
 private fun DrinkHistoryItem(
     history: HydrationLogWithBottle,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val timeFormatter = remember { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
+    val context = LocalContext.current
+    val timeFormatter = remember { SimpleDateFormat(if (android.text.format.DateFormat.is24HourFormat(context)) "HH:mm" else "hh:mm a", Locale.getDefault()) }
     val time = timeFormatter.format(Date(history.log.loggedAt))
     
-    val name = history.log.bottleName ?: history.bottle?.name ?: history.log.drinkType.name
-    val color = when (history.log.drinkType) {
-        DrinkType.Water -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.secondary
-    }
+    val name = history.log.bottleName ?: history.bottle?.name ?: "Unknown"
+    val color = MaterialTheme.colorScheme.primary
     val iconBg = color.copy(alpha = 0.1f)
     
+    var showMenu by remember { mutableStateOf(false) }
+
     Card(
         shape = RoundedCornerShape(32.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -611,12 +683,48 @@ private fun DrinkHistoryItem(
                 }
             }
             
-            Text(
-                text = "+${history.log.amountMl.toInt()}ml",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                color = color
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "+${history.log.amountMl.toInt()}ml",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = color
+                )
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                Box {
+                    IconButton(
+                        onClick = { showMenu = true },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "More",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    AquriDropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        items = listOf(
+                            AquriDropdownMenuItem(
+                                text = "Edit",
+                                icon = AquriDropdownIcon.Vector(Icons.Default.Edit),
+                                onClick = onEdit
+                            ),
+                            AquriDropdownMenuItem(
+                                text = "Delete",
+                                icon = AquriDropdownIcon.Vector(Icons.Default.Delete),
+                                isDestructive = true,
+                                onClick = onDelete
+                            )
+                        )
+                    )
+                }
+            }
         }
     }
 }

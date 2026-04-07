@@ -65,6 +65,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -72,8 +73,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.anafthdev.aquri.data.model.entity.BottleEntity
+import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
 import com.anafthdev.aquri.data.model.enum.DrinkBottleIcon
 import com.anafthdev.aquri.ui.components.AquriDropdownIcon
 import com.anafthdev.aquri.ui.components.AquriDropdownMenu
@@ -90,12 +93,19 @@ fun ManageBottleScreen(
     val bottles by viewModel.bottles.collectAsState()
     val defaultBottles by viewModel.defaultBottles.collectAsState()
     val customBottles by viewModel.customBottles.collectAsState()
+    val defaultDrinkTypes by viewModel.defaultDrinkTypes.collectAsState()
+    val customDrinkTypes by viewModel.customDrinkTypes.collectAsState()
     
     var selectedSlot by remember { mutableIntStateOf(1) }
-    var showBottomSheet by remember { mutableStateOf(false) }
+    var showBottleBottomSheet by remember { mutableStateOf(false) }
+    var showDrinkTypeBottomSheet by remember { mutableStateOf(false) }
     var editingBottle by remember { mutableStateOf<BottleEntity?>(null) }
+    var editingDrinkType by remember { mutableStateOf<DrinkTypeEntity?>(null) }
     var deletingBottle by remember { mutableStateOf<BottleEntity?>(null) }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var deletingDrinkType by remember { mutableStateOf<DrinkTypeEntity?>(null) }
+    
+    val bottleSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val drinkTypeSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -125,44 +135,24 @@ fun ManageBottleScreen(
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Column {
                     Text(
-                        text = "Manage Bottles",
+                        text = "Manage Vessels",
                         style = MaterialTheme.typography.displaySmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
-                        text = "Customize your dashboard slots for one-tap hydration.",
+                        text = "Customize your dashboard slots and beverage types.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     
                     Spacer(modifier = Modifier.height(32.dp))
                     
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Dashboard Slots",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.primaryContainer)
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = "3 ACTIVE",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
+                    Text(
+                        text = "Dashboard Slots",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
@@ -220,12 +210,6 @@ fun ManageBottleScreen(
                         3 -> user?.bottleSlot3 == bottle.id
                         else -> false
                     },
-                    isAssignedToOtherSlot = isAssigned && when(selectedSlot) {
-                        1 -> user?.bottleSlot1 != bottle.id
-                        2 -> user?.bottleSlot2 != bottle.id
-                        3 -> user?.bottleSlot3 != bottle.id
-                        else -> true
-                    },
                     onClick = {
                         viewModel.assignBottleToSlot(selectedSlot, bottle.id)
                     }
@@ -258,7 +242,7 @@ fun ManageBottleScreen(
                     isAssigned = isAssignedToCurrentSlot,
                     onEdit = { 
                         editingBottle = bottle
-                        showBottomSheet = true
+                        showBottleBottomSheet = true
                     },
                     onDelete = { deletingBottle = bottle },
                     onClick = { viewModel.assignBottleToSlot(selectedSlot, bottle.id) },
@@ -267,10 +251,72 @@ fun ManageBottleScreen(
             }
             
             item {
-                CreateNewBottleCard(
+                CreateNewCard(
+                    text = "New Bottle",
                     onClick = { 
                         editingBottle = null
-                        showBottomSheet = true 
+                        showBottleBottomSheet = true 
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Column {
+                    Spacer(modifier = Modifier.height(48.dp))
+                    Text(
+                        text = "DRINK TYPES",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+
+            items(
+                count = defaultDrinkTypes.size,
+                span = { GridItemSpan(maxLineSpan) }
+            ) { index ->
+                val drinkType = defaultDrinkTypes[index]
+                DrinkTypeListItem(
+                    drinkType = drinkType,
+                    onClick = { /* Predefined types are view-only here or can be selectable if needed */ }
+                )
+            }
+
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Column {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "MY CUSTOM DRINK TYPES",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+
+            items(count = customDrinkTypes.size) { index ->
+                val drinkType = customDrinkTypes[index]
+                CustomDrinkTypeCard(
+                    drinkType = drinkType,
+                    onEdit = { 
+                        editingDrinkType = drinkType
+                        showDrinkTypeBottomSheet = true
+                    },
+                    onDelete = { deletingDrinkType = drinkType },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            item {
+                CreateNewCard(
+                    text = "New Drink Type",
+                    onClick = { 
+                        editingDrinkType = null
+                        showDrinkTypeBottomSheet = true 
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -281,6 +327,8 @@ fun ManageBottleScreen(
             }
         }
     }
+
+    // --- Dialogs & Bottom Sheets ---
 
     if (deletingBottle != null) {
         AlertDialog(
@@ -305,13 +353,36 @@ fun ManageBottleScreen(
         )
     }
 
-    if (showBottomSheet) {
+    if (deletingDrinkType != null) {
+        AlertDialog(
+            onDismissRequest = { deletingDrinkType = null },
+            title = { Text("Delete Drink Type") },
+            text = { Text("Are you sure you want to delete '${deletingDrinkType?.name}'? History logs using this type might be affected.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteCustomDrinkType(deletingDrinkType!!)
+                        deletingDrinkType = null
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deletingDrinkType = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showBottleBottomSheet) {
         ModalBottomSheet(
             onDismissRequest = { 
-                showBottomSheet = false
+                showBottleBottomSheet = false
                 editingBottle = null
             },
-            sheetState = sheetState
+            sheetState = bottleSheetState
         ) {
             CreateBottleBottomSheetContent(
                 initialBottle = editingBottle,
@@ -327,9 +398,9 @@ fun ManageBottleScreen(
                     } else {
                         viewModel.createCustomBottle(name, volume, icon)
                     }
-                    scope.launch { sheetState.hide() }.invokeOnCompletion {
-                        if (!sheetState.isVisible) {
-                            showBottomSheet = false
+                    scope.launch { bottleSheetState.hide() }.invokeOnCompletion {
+                        if (!bottleSheetState.isVisible) {
+                            showBottleBottomSheet = false
                             editingBottle = null
                         }
                     }
@@ -337,7 +408,44 @@ fun ManageBottleScreen(
             )
         }
     }
+
+    if (showDrinkTypeBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { 
+                showDrinkTypeBottomSheet = false
+                editingDrinkType = null
+            },
+            sheetState = drinkTypeSheetState
+        ) {
+            CreateDrinkTypeBottomSheetContent(
+                initialDrinkType = editingDrinkType,
+                onSave = { name, color ->
+                    if (editingDrinkType != null) {
+                        viewModel.updateCustomDrinkType(
+                            editingDrinkType!!.copy(
+                                name = name,
+                                hexColor = String.format("#%06X", (0xFFFFFF and color.toArgb()))
+                            )
+                        )
+                    } else {
+                        viewModel.createCustomDrinkType(
+                            name, 
+                            String.format("#%06X", (0xFFFFFF and color.toArgb()))
+                        )
+                    }
+                    scope.launch { drinkTypeSheetState.hide() }.invokeOnCompletion {
+                        if (!drinkTypeSheetState.isVisible) {
+                            showDrinkTypeBottomSheet = false
+                            editingDrinkType = null
+                        }
+                    }
+                }
+            )
+        }
+    }
 }
+
+// --- Components ---
 
 @Composable
 fun DashboardSlot(
@@ -376,7 +484,7 @@ fun DashboardSlot(
                 ) {
                     Icon(
                         painter = painterResource(
-                            id = bottle?.icon?.let { DrinkBottleIcon.fromString(it).resId } ?: DrinkBottleIcon.Bottle1.resId
+                            id = bottle.icon.let { DrinkBottleIcon.fromString(it).resId }
                         ),
                         contentDescription = null,
                         tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -422,7 +530,6 @@ fun DashboardSlot(
 fun BottleListItem(
     bottle: BottleEntity,
     isAssignedToCurrentSlot: Boolean,
-    isAssignedToOtherSlot: Boolean,
     onClick: () -> Unit
 ) {
     Card(
@@ -489,6 +596,50 @@ fun BottleListItem(
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DrinkTypeListItem(
+    drinkType: DrinkTypeEntity,
+    onClick: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(74.dp)
+            .clickable { onClick() }
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color(android.graphics.Color.parseColor(drinkType.hexColor)), CircleShape)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Column {
+                    Text(
+                        text = drinkType.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Predefined Type",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -594,13 +745,9 @@ fun CustomBottleCard(
                     onClick = { /* Already assigned */ },
                     shape = RoundedCornerShape(24.dp),
                     enabled = false,
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "Assigned",
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text("Assigned", fontWeight = FontWeight.Bold)
                 }
             } else {
                 Button(
@@ -610,13 +757,9 @@ fun CustomBottleCard(
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                         contentColor = MaterialTheme.colorScheme.primary
-                    ),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp)
-                ) {
-                    Text(
-                        text = "Assign",
-                        fontWeight = FontWeight.Bold
                     )
+                ) {
+                    Text("Assign", fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -624,7 +767,83 @@ fun CustomBottleCard(
 }
 
 @Composable
-fun CreateNewBottleCard(
+fun CustomDrinkTypeCard(
+    drinkType: DrinkTypeEntity,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var showMenu by remember { mutableStateOf(false) }
+
+    Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(Color(android.graphics.Color.parseColor(drinkType.hexColor)), CircleShape)
+                )
+
+                Box {
+                    IconButton(
+                        onClick = { showMenu = true },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "More",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    AquriDropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        items = listOf(
+                            AquriDropdownMenuItem(
+                                text = "Edit",
+                                icon = AquriDropdownIcon.Vector(Icons.Default.Edit),
+                                onClick = onEdit
+                            ),
+                            AquriDropdownMenuItem(
+                                text = "Delete",
+                                icon = AquriDropdownIcon.Vector(Icons.Default.Delete),
+                                isDestructive = true,
+                                onClick = onDelete
+                            )
+                        )
+                    )
+                }
+            }
+
+            Text(
+                text = drinkType.name,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+fun CreateNewCard(
+    text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -645,7 +864,7 @@ fun CreateNewBottleCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Create New",
+                text = text,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -705,8 +924,8 @@ fun CreateBottleBottomSheetContent(
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Next
             ),
-            onValueChange = { 
-                name = it
+            onValueChange = {
+                name = it.take(20) // Max 20 char
                 if (nameError != null && it.isNotBlank()) nameError = null
             },
             isError = nameError != null,
@@ -727,13 +946,8 @@ fun CreateBottleBottomSheetContent(
             ),
             onValueChange = { input ->
                 if (input.isEmpty() || input.all { it.isDigit() || it == '.' }) {
-                    if (input.count { it == '.' } <= 1) {
-                        volume = input
-                        if (volumeError != null && input.isNotBlank()) {
-                            val vol = input.toFloatOrNull() ?: 0f
-                            if (vol > 0) volumeError = null
-                        }
-                    }
+                    volume = input.take(4) // Max 9999ml
+                    volumeError = null
                 }
             },
             isError = volumeError != null,
@@ -745,13 +959,13 @@ fun CreateBottleBottomSheetContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         val icons = remember { DrinkBottleIcon.entries }
-        
         Text("SELECT ICON", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
         
         FlowRow(
-            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
         ) {
             icons.forEach { icon ->
                 val isSelected = selectedIcon == icon
@@ -786,28 +1000,123 @@ fun CreateBottleBottomSheetContent(
         Button(
             onClick = {
                 val vol = volume.toFloatOrNull() ?: 0f
-                val isNameValid = name.isNotBlank()
-
-                nameError = if (!isNameValid) "Bottle name cannot be empty" else null
-                volumeError = when {
-                    volume.isBlank() -> "Volume cannot be empty"
-                    vol <= 0 -> "Volume must be greater than 0"
-                    vol > 5000 -> "Volume seems too large (max 5000ml)"
-                    else -> null
-                }
-
-                if (isNameValid && volumeError == null) {
+                if (name.isBlank()) nameError = "Name cannot be empty"
+                if (vol <= 0) volumeError = "Invalid volume"
+                
+                if (name.isNotBlank() && vol > 0) {
                     onSave(name, vol, selectedIcon.name)
                 }
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(16.dp)
         ) {
             Text(if (initialBottle != null) "Update Bottle" else "Save Bottle")
         }
     }
+}
+
+@Composable
+fun CreateDrinkTypeBottomSheetContent(
+    initialDrinkType: DrinkTypeEntity? = null,
+    onSave: (String, Color) -> Unit
+) {
+    var name by remember { mutableStateOf(initialDrinkType?.name ?: "") }
+    var selectedColor by remember { 
+        mutableStateOf(
+            initialDrinkType?.hexColor?.let { Color(it.toColorInt()) } ?: Color(0xFF00ACC1)
+        ) 
+    }
+
+    val colors = listOf(
+        Color(0xFF00ACC1), Color(0xFF26A69A), Color(0xFFEF6C00), 
+        Color(0xFFFDD835), Color(0xFFE53935), Color(0xFF1E88E5),
+        Color(0xFFBDBDBD), Color(0xFF7E57C2), Color(0xFFD81B60),
+        Color(0xFF43A047), Color(0xFF8E24AA), Color(0xFF3949AB)
+    )
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(24.dp)
+            .padding(bottom = 32.dp)
+    ) {
+        Text(
+            text = if (initialDrinkType != null) "Edit Drink Type" else "New Drink Type",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
+        )
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Text("NAME", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+        OutlinedTextField(
+            value = name,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Done
+            ),
+            onValueChange = { name = it.take(16) },
+            placeholder = { Text("e.g., Green Tea") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp)
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("SELECT COLOR", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            colors.take(6).forEach { color ->
+                ColorOption(
+                    color = color,
+                    isSelected = selectedColor == color,
+                    onClick = { selectedColor = color }
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            colors.drop(6).forEach { color ->
+                ColorOption(
+                    color = color,
+                    isSelected = selectedColor == color,
+                    onClick = { selectedColor = color }
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(32.dp))
+        
+        Button(
+            onClick = { if (name.isNotBlank()) onSave(name, selectedColor) },
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Text(if (initialDrinkType != null) "Update Type" else "Save Type")
+        }
+    }
+}
+
+@Composable
+fun ColorOption(color: Color, isSelected: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(color)
+            .border(
+                width = 2.dp,
+                color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                shape = CircleShape
+            )
+            .clickable { onClick() }
+    )
 }
 
 fun Modifier.drawBehindDashedBorder(color: Color) = this.drawBehind {

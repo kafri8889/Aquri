@@ -12,6 +12,7 @@ import com.anafthdev.aquri.data.model.entity.BadgeEntity
 import com.anafthdev.aquri.data.model.entity.BottleEntity
 import com.anafthdev.aquri.data.model.entity.ChallengeEntity
 import com.anafthdev.aquri.data.model.entity.DailySummaryEntity
+import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
 import com.anafthdev.aquri.data.model.entity.HydrationLogEntity
 import com.anafthdev.aquri.data.model.entity.LevelEntity
 import com.anafthdev.aquri.data.model.entity.NotificationEntity
@@ -38,9 +39,10 @@ import com.anafthdev.aquri.data.model.entity.UserQuestEntity
         UserChallengeEntity::class,
         BadgeEntity::class,
         UserBadgeEntity::class,
-        BottleEntity::class
+        BottleEntity::class,
+        DrinkTypeEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(DataConverter::class)

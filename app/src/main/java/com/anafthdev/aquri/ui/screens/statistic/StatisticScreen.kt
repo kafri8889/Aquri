@@ -55,7 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.anafthdev.aquri.data.model.enum.DrinkType
+import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
 import com.anafthdev.aquri.ui.screens.statistic.components.BeverageTypeCard
 import com.anafthdev.aquri.ui.screens.statistic.components.DailyStatisticsSection
 import com.anafthdev.aquri.ui.screens.statistic.components.StatisticFilterChips
@@ -117,7 +117,7 @@ fun StatisticScreenContent(
     peakActivityHour: Int?,
     logCount: Int,
     topBottleName: String?,
-    beverageDistribution: Map<DrinkType, Float>,
+    beverageDistribution: Map<DrinkTypeEntity, Float>,
     totalMl: Float,
     goalMl: Float,
     onFilterSelected: (StatisticFilter) -> Unit,
@@ -494,9 +494,9 @@ private fun StatisticScreenPreview() {
             logCount = 7,
             topBottleName = "Glass Cup",
             beverageDistribution = mapOf(
-                DrinkType.Water to 75f,
-                DrinkType.Tea to 15f,
-                DrinkType.Coffee to 10f
+                DrinkTypeEntity(name = "Water", hexColor = "#006064") to 75f,
+                DrinkTypeEntity(name = "Tea", hexColor = "#26A69A") to 15f,
+                DrinkTypeEntity(name = "Coffee", hexColor = "#EF6C00") to 10f
             ),
             totalMl = 1650f,
             goalMl = 2500f,

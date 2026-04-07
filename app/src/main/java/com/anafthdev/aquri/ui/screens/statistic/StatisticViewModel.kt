@@ -3,10 +3,11 @@ package com.anafthdev.aquri.ui.screens.statistic
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.anafthdev.aquri.data.model.entity.DailySummaryEntity
+import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
 import com.anafthdev.aquri.data.model.entity.HydrationLogWithBottle
-import com.anafthdev.aquri.data.model.enum.DrinkType
 import com.anafthdev.aquri.data.repository.HydrationRepository
 import com.anafthdev.aquri.data.repository.UserRepository
+import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +35,8 @@ class StatisticViewModel @Inject constructor(
     private val _selectedDate = MutableStateFlow(System.currentTimeMillis())
     val selectedDate: StateFlow<Long> = _selectedDate.asStateFlow()
 
+    val mainChartModelProducer = CartesianChartModelProducer()
+
     private val _chartData = MutableStateFlow<List<Float>>(emptyList())
     val chartData: StateFlow<List<Float>> = _chartData.asStateFlow()
 
@@ -46,8 +49,8 @@ class StatisticViewModel @Inject constructor(
     private val _topBottleName = MutableStateFlow<String?>(null)
     val topBottleName: StateFlow<String?> = _topBottleName.asStateFlow()
 
-    private val _beverageDistribution = MutableStateFlow<Map<DrinkType, Float>>(emptyMap())
-    val beverageDistribution: StateFlow<Map<DrinkType, Float>> = _beverageDistribution.asStateFlow()
+    private val _beverageDistribution = MutableStateFlow<Map<DrinkTypeEntity, Float>>(emptyMap())
+    val beverageDistribution: StateFlow<Map<DrinkTypeEntity, Float>> = _beverageDistribution.asStateFlow()
 
     val user = userRepository.getUser()
         .stateIn(
@@ -72,6 +75,13 @@ class StatisticViewModel @Inject constructor(
         .flatMapLatest { user ->
             hydrationRepository.getLogsWithBottle(user.id)
         }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val drinkTypes: StateFlow<List<DrinkTypeEntity>> = hydrationRepository.getAllDrinkTypes()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -104,11 +114,18 @@ class StatisticViewModel @Inject constructor(
     )
 
     init {
-        combine(_selectedFilter, _selectedDate, dailySummaries, selectedDateLogs, allLogs) { filter, date, summaries, logs, allLogs ->
+        combine(_selectedFilter, _selectedDate, dailySummaries, selectedDateLogs, allLogs, drinkTypes) { args ->
+            val filter = args[0] as StatisticFilter
+            val date = args[1] as Long
+            val summaries = args[2] as List<DailySummaryEntity>
+            val logs = args[3] as List<HydrationLogWithBottle>
+            val allLogs = args[4] as List<HydrationLogWithBottle>
+            val types = args[5] as List<DrinkTypeEntity>
+
             val data = prepareData(filter, date, summaries, logs)
             _chartData.value = data
             
-            _beverageDistribution.value = calculateBeverageDistribution(filter, date, allLogs)
+            _beverageDistribution.value = calculateBeverageDistribution(filter, date, allLogs, types)
 
             if (filter == StatisticFilter.Daily) {
                 _peakActivityHour.value = data.indexOfMax()?.takeIf { data[it] > 0 }
@@ -125,11 +142,21 @@ class StatisticViewModel @Inject constructor(
         }.launchIn(viewModelScope)
     }
 
+    private fun List<Float>.indexOfMax(): Int? {
+        if (isEmpty()) return null
+        var maxIndex = 0
+        for (i in indices) {
+            if (this[i] > this[maxIndex]) maxIndex = i
+        }
+        return maxIndex
+    }
+
     private fun calculateBeverageDistribution(
         filter: StatisticFilter,
         date: Long,
-        logs: List<HydrationLogWithBottle>
-    ): Map<DrinkType, Float> {
+        logs: List<HydrationLogWithBottle>,
+        types: List<DrinkTypeEntity>
+    ): Map<DrinkTypeEntity, Float> {
         val calendar = Calendar.getInstance().apply { timeInMillis = date }
         val filteredLogs = when (filter) {
             StatisticFilter.Daily -> logs.filter { isSameDay(it.log.logDate, date) }
@@ -163,20 +190,12 @@ class StatisticViewModel @Inject constructor(
 
         val totalAmount = filteredLogs.sumOf { it.log.amountMl.toDouble() }.toFloat()
         return filteredLogs
-            .groupBy { it.log.drinkType }
-            .mapValues { (_, drinkLogs) ->
+            .groupBy { it.log.drinkTypeId }
+            .mapNotNull { (typeId, drinkLogs) ->
+                val type = types.find { it.id == typeId } ?: return@mapNotNull null
                 val drinkAmount = drinkLogs.sumOf { it.log.amountMl.toDouble() }.toFloat()
-                (drinkAmount / totalAmount) * 100f
-            }
-    }
-
-    private fun List<Float>.indexOfMax(): Int? {
-        if (isEmpty()) return null
-        var maxIndex = 0
-        for (i in indices) {
-            if (this[i] > this[maxIndex]) maxIndex = i
-        }
-        return maxIndex
+                type to (drinkAmount / totalAmount) * 100f
+            }.toMap()
     }
 
     private fun prepareData(
@@ -190,16 +209,17 @@ class StatisticViewModel @Inject constructor(
         return when (filter) {
             StatisticFilter.Daily -> {
                 // Hourly data (0-23 hours)
-                val hourlyData = FloatArray(24)
+                val hourlyData = FloatArray(24) { 0f }
                 logs.forEach { logWithBottle ->
                     val logCal = Calendar.getInstance().apply { timeInMillis = logWithBottle.log.loggedAt }
                     val hour = logCal.get(Calendar.HOUR_OF_DAY)
-                    hourlyData[hour] += logWithBottle.log.amountMl
+                    if (hour in 0..23) {
+                        hourlyData[hour] += logWithBottle.log.amountMl
+                    }
                 }
                 hourlyData.toList()
             }
             StatisticFilter.Weekly -> {
-                // Data for the 7 days of the selected week (Mon-Sun or Sun-Sat based on locale)
                 val cal = calendar.clone() as Calendar
                 cal.set(Calendar.DAY_OF_WEEK, cal.firstDayOfWeek)
                 val weekData = mutableListOf<Float>()
@@ -212,7 +232,6 @@ class StatisticViewModel @Inject constructor(
                 weekData
             }
             StatisticFilter.Monthly -> {
-                // Data for all days in the selected month
                 val cal = calendar.clone() as Calendar
                 cal.set(Calendar.DAY_OF_MONTH, 1)
                 val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
@@ -226,7 +245,6 @@ class StatisticViewModel @Inject constructor(
                 monthData
             }
             StatisticFilter.Yearly -> {
-                // Monthly data for the selected year
                 val currentYear = calendar.get(Calendar.YEAR)
                 val yearData = mutableListOf<Float>()
                 repeat(12) { month ->
@@ -250,7 +268,6 @@ class StatisticViewModel @Inject constructor(
 
     fun onFilterSelected(filter: StatisticFilter) {
         _selectedFilter.value = filter
-        // Reset selected date to current when filter changes
         _selectedDate.value = System.currentTimeMillis()
     }
 
