@@ -2,6 +2,7 @@ package com.anafthdev.aquri.ui.screens.home
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -52,11 +53,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.anafthdev.aquri.data.Constant
@@ -270,6 +276,7 @@ private fun HeroSection(
                         .size(192.dp, 128.dp)
                         .clip(RoundedCornerShape(24.dp))
                         .background(MaterialTheme.colorScheme.background)
+                        .padding(8.dp)
                         .align(Alignment.Center)
                 ) {
                     Text(
@@ -277,24 +284,25 @@ private fun HeroSection(
                         style = MaterialTheme.typography.labelSmall,
                     )
 
-                    Row(
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        Text(
-                            text = totalMl.toInt().toString(),
-                            style = MaterialTheme.typography.displayLarge.copy(
-                                fontSize = 60.sp,
-                                letterSpacing = (-3).sp
-                            ),
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "ml",
-                            style = MaterialTheme.typography.titleLarge.copy(fontSize = 24.sp),
-                            modifier = Modifier.padding(bottom = 12.dp)
-                        )
-                    }
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(
+                                style = MaterialTheme.typography.displayLarge.copy(
+                                    fontSize = 48.sp,
+                                    letterSpacing = (-3).sp,
+                                    fontWeight = FontWeight.ExtraBold
+                                ).toSpanStyle()
+                            ) { append(totalMl.toInt().toString()) }
+
+                            withStyle(
+                                style = MaterialTheme.typography.titleLarge.copy(fontSize = 24.sp).toSpanStyle()
+                            ) { append("ml") }
+                        },
+                        maxLines = 1,
+                        modifier = Modifier
+                            .basicMarquee()
+                    )
+
                     Text(
                         text = "Daily Goal: ${goalMl.toInt()}ml",
                         style = MaterialTheme.typography.bodyMedium,
@@ -647,41 +655,61 @@ private fun DrinkHistoryItem(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 17.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(iconBg, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(
-                            id = history.bottle?.let { DrinkBottleIcon.fromString(it.icon).resId } 
-                                ?: DrinkBottleIcon.WaterBottle.resId
-                        ),
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = color
-                    )
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Column {
-                    Text(
-                        text = name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(iconBg, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(
+                        id = history.bottle?.let { DrinkBottleIcon.fromString(it.icon).resId } 
+                             ?: DrinkBottleIcon.WaterBottle.resId
+                    ),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = color
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = time,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    history.drinkType?.let { type ->
+                        Text(
+                            text = " \u2022 ",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = type.name,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(type.hexColor.toColorInt()),
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
+            
+            Spacer(modifier = Modifier.width(8.dp))
             
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -691,7 +719,7 @@ private fun DrinkHistoryItem(
                     color = color
                 )
                 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(4.dp))
                 
                 Box {
                     IconButton(

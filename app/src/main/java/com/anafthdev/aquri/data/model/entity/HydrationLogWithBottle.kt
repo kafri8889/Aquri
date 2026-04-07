@@ -13,5 +13,10 @@ data class HydrationLogWithBottle(
         parentColumn = "bottle_id",
         entityColumn = "id"
     )
-    val bottle: BottleEntity?
+    val bottle: BottleEntity?,
+    @Relation(
+        parentColumn = "drink_type_id",
+        entityColumn = "id"
+    )
+    val drinkType: DrinkTypeEntity?
 )

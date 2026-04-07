@@ -929,7 +929,16 @@ fun CreateBottleBottomSheetContent(
                 if (nameError != null && it.isNotBlank()) nameError = null
             },
             isError = nameError != null,
-            supportingText = nameError?.let { { Text(it) } },
+            supportingText = {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    if (nameError != null) {
+                        Text(nameError!!, modifier = Modifier.weight(1f))
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                    Text("${name.length}/20")
+                }
+            },
             placeholder = { Text("e.g., Office Carafe") },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp)
@@ -937,9 +946,11 @@ fun CreateBottleBottomSheetContent(
         
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("VOLUME (ML)", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+        Text("VOLUME", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
         OutlinedTextField(
             value = volume,
+            shape = RoundedCornerShape(16.dp),
+            isError = volumeError != null,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Decimal,
                 imeAction = ImeAction.Done
@@ -950,10 +961,20 @@ fun CreateBottleBottomSheetContent(
                     volumeError = null
                 }
             },
-            isError = volumeError != null,
-            supportingText = volumeError?.let { { Text(it) } },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp)
+            suffix = {
+                Text("ml")
+            },
+            supportingText = {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    if (volumeError != null) {
+                        Text(volumeError!!, modifier = Modifier.weight(1f))
+                    } else {
+                        Text("Max volume 9999ml", modifier = Modifier.weight(1f))
+                    }
+                    Text("${volume.length}/4")
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
         )
         
         Spacer(modifier = Modifier.height(16.dp))
@@ -1058,6 +1079,11 @@ fun CreateDrinkTypeBottomSheetContent(
             ),
             onValueChange = { name = it.take(16) },
             placeholder = { Text("e.g., Green Tea") },
+            supportingText = {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                    Text("${name.length}/16")
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp)
         )

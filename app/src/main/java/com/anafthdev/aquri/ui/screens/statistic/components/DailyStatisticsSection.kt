@@ -3,6 +3,7 @@ package com.anafthdev.aquri.ui.screens.statistic.components
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -81,15 +82,20 @@ fun DailyStatisticsSection(
 
             // Text Content
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .padding(horizontal = 24.dp)
             ) {
                 Text(
                     text = totalMl.toInt().toString(),
+                    maxLines = 1,
                     style = MaterialTheme.typography.displayLarge.copy(
                         fontSize = 64.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
-                    )
+                    ),
+                    modifier = Modifier
+                        .basicMarquee()
                 )
                 Text(
                     text = "ML LOGGED",

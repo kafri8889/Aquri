@@ -1,6 +1,7 @@
 package com.anafthdev.aquri.ui.screens.statistic.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.toColorInt
 import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
 
 @Composable
@@ -100,7 +102,7 @@ private fun BeverageLegendItem(
     modifier: Modifier = Modifier
 ) {
     val color = try {
-        Color(android.graphics.Color.parseColor(type.hexColor))
+        Color(type.hexColor.toColorInt())
     } catch (e: Exception) {
         Color.Gray
     }
@@ -111,20 +113,29 @@ private fun BeverageLegendItem(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .weight(1f)
         ) {
             Box(
                 modifier = Modifier
                     .size(12.dp)
                     .background(color, CircleShape)
             )
-            Spacer(modifier = Modifier.width(12.dp))
+
+            Spacer(modifier = Modifier.width(8.dp))
+
             Text(
                 text = type.name,
+                maxLines = 1,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.DarkGray
+                color = Color.DarkGray,
+                modifier = Modifier
+                    .basicMarquee()
             )
         }
+
+        Spacer(modifier = Modifier.width(8.dp))
 
         Text(
             text = "${percentage.toInt()}%",
