@@ -8,7 +8,10 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
@@ -241,16 +244,36 @@ private val highContrastDarkColorScheme = darkColorScheme(
 )
 
 @Immutable
-data class ColorFamily(
-    val color: Color,
-    val onColor: Color,
-    val colorContainer: Color,
-    val onColorContainer: Color
+data class AquriColorScheme(
+    val success: Color,
+    val onSuccess: Color,
+    val warning: Color,
+    val onWarning: Color,
+    val error: Color,
+    val onError: Color,
+    val lightText: Color
 )
 
-val unspecified_scheme = ColorFamily(
-    Color.Unspecified, Color.Unspecified, Color.Unspecified, Color.Unspecified
+val lightAquriColorScheme = AquriColorScheme(
+    success = aquriSuccessLight,
+    onSuccess = onAquriSuccessLight,
+    warning = aquriWarningLight,
+    onWarning = onAquriWarningLight,
+    error = aquriErrorLight,
+    onError = onAquriErrorLight,
+    lightText = onAquriLightTextLight
 )
+
+val LocalAquriColorScheme = staticCompositionLocalOf { lightAquriColorScheme }
+
+object AquriTheme {
+
+    val colorScheme: AquriColorScheme
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalAquriColorScheme.current
+
+}
 
 @Composable
 fun AquriTheme(
@@ -269,9 +292,13 @@ fun AquriTheme(
         else -> lightScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = AppTypography,
-        content = content
-    )
+    CompositionLocalProvider(
+        LocalAquriColorScheme provides lightAquriColorScheme
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = AppTypography,
+            content = content
+        )
+    }
 }

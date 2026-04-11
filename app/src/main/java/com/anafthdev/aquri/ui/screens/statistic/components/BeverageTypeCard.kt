@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -19,15 +20,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
-import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
+import com.anafthdev.aquri.ui.screens.statistic.BeverageBreakdownData
+import com.anafthdev.aquri.ui.theme.AquriTheme
 
 @Composable
 fun BeverageTypeCard(
-    beverageDistribution: Map<DrinkTypeEntity, Float>,
+    beverageDistribution: List<BeverageBreakdownData>,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -73,7 +78,7 @@ fun BeverageTypeCard(
                 // Legend (right side)
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     if (beverageDistribution.isEmpty()) {
                         Text(
@@ -82,11 +87,8 @@ fun BeverageTypeCard(
                             color = Color.Gray
                         )
                     } else {
-                        beverageDistribution.forEach { (type, percentage) ->
-                            BeverageLegendItem(
-                                type = type,
-                                percentage = percentage
-                            )
+                        beverageDistribution.forEach { item ->
+                            BeverageLegendItem(item)
                         }
                     }
                 }
@@ -97,51 +99,82 @@ fun BeverageTypeCard(
 
 @Composable
 private fun BeverageLegendItem(
-    type: DrinkTypeEntity,
-    percentage: Float,
+    item: BeverageBreakdownData,
     modifier: Modifier = Modifier
 ) {
-    val color = try {
-        Color(type.hexColor.toColorInt())
-    } catch (e: Exception) {
-        Color.Gray
-    }
+    val color = try { Color(item.hexColor.toColorInt()) } catch (e: Exception) { Color.Gray }
 
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .background(color, CircleShape)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(
+                        text = item.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        modifier = Modifier.basicMarquee()
+                    )
+                    Text(
+                        text = "${String.format("%,.0f", item.totalMl)} ml",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AquriTheme.colorScheme.lightText,
+                        fontSize = 10.sp
+                    )
+                }
+            }
+
+            Text(
+                text = "${item.percentage.toInt()}%",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+        }
+        
+        // Mini progress bar
+        Box(
             modifier = Modifier
-                .weight(1f)
+                .fillMaxWidth()
+                .height(4.dp)
+                .clip(CircleShape)
+                .background(Color.LightGray.copy(alpha = 0.2f))
         ) {
             Box(
                 modifier = Modifier
-                    .size(12.dp)
-                    .background(color, CircleShape)
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Text(
-                text = type.name,
-                maxLines = 1,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.DarkGray,
-                modifier = Modifier
-                    .basicMarquee()
+                    .fillMaxWidth(item.percentage / 100f)
+                    .height(4.dp)
+                    .clip(CircleShape)
+                    .background(color)
             )
         }
+    }
+}
 
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Text(
-            text = "${percentage.toInt()}%",
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
+@Preview(showBackground = true)
+@Composable
+private fun BeverageTypeCardPreview() {
+    AquriTheme {
+        BeverageTypeCard(
+            beverageDistribution = listOf(
+                BeverageBreakdownData("Pure Water", 8400f, 57f, "#00ACC1"),
+                BeverageBreakdownData("Tea & Coffee", 3200f, 22f, "#EF6C00"),
+                BeverageBreakdownData("Juice & Other", 3100f, 21f, "#26A69A")
+            ),
+            modifier = Modifier.padding(16.dp)
         )
     }
 }

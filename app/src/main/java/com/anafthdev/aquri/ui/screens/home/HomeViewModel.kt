@@ -11,6 +11,7 @@ import com.anafthdev.aquri.data.model.entity.UserEntity
 import com.anafthdev.aquri.data.model.entity.UserGamificationEntity
 import com.anafthdev.aquri.data.repository.HydrationRepository
 import com.anafthdev.aquri.data.repository.UserRepository
+import com.anafthdev.aquri.utils.DateTimeUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,7 +22,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.util.Calendar
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -32,12 +32,7 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val midnightDate: Long
-        get() = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
+        get() = DateTimeUtils.getMidnight(System.currentTimeMillis())
 
     val user: StateFlow<UserEntity?> = userRepository.getUser()
         .stateIn(
@@ -140,13 +135,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val currentUser = user.value ?: return@launch
             
-            val logDate = Calendar.getInstance().apply {
-                timeInMillis = timestamp
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }.timeInMillis
+            val logDate = DateTimeUtils.getMidnight(timestamp)
 
             hydrationRepository.insertLog(
                 HydrationLogEntity(
@@ -169,13 +158,7 @@ class HomeViewModel @Inject constructor(
             val currentUser = user.value ?: return@launch
             val oldLogDate = log.logDate
             
-            val newLogDate = Calendar.getInstance().apply {
-                timeInMillis = timestamp
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }.timeInMillis
+            val newLogDate = DateTimeUtils.getMidnight(timestamp)
 
             hydrationRepository.updateLog(
                 log.copy(

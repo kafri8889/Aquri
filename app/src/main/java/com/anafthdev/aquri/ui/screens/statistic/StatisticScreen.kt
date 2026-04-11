@@ -56,10 +56,13 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
+import com.anafthdev.aquri.ui.screens.statistic.components.BestWorstDaySection
 import com.anafthdev.aquri.ui.screens.statistic.components.BeverageTypeCard
 import com.anafthdev.aquri.ui.screens.statistic.components.DailyStatisticsSection
+import com.anafthdev.aquri.ui.screens.statistic.components.HistoryComparisonCard
 import com.anafthdev.aquri.ui.screens.statistic.components.StatisticFilterChips
 import com.anafthdev.aquri.ui.screens.statistic.components.StatisticPeriodSelector
+import com.anafthdev.aquri.ui.screens.statistic.components.WeeklyDailyGoalsCard
 import com.anafthdev.aquri.ui.screens.statistic.components.rememberMarker
 import com.anafthdev.aquri.ui.theme.AquriTheme
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
@@ -88,6 +91,11 @@ fun StatisticScreen(
     val logCount by viewModel.logCount.collectAsStateWithLifecycle()
     val topBottleName by viewModel.topBottleName.collectAsStateWithLifecycle()
     val beverageDistribution by viewModel.beverageDistribution.collectAsStateWithLifecycle()
+    val weeklyDailyGoals by viewModel.weeklyDailyGoals.collectAsStateWithLifecycle()
+    val weeklyBestDay by viewModel.weeklyBestDay.collectAsStateWithLifecycle()
+    val weeklyWorstDay by viewModel.weeklyWorstDay.collectAsStateWithLifecycle()
+    val weeklyComparison by viewModel.weeklyComparison.collectAsStateWithLifecycle()
+    val weeklyBeverageBreakdown by viewModel.weeklyBeverageBreakdown.collectAsStateWithLifecycle()
     val selectedDaySummary by viewModel.selectedDaySummary.collectAsStateWithLifecycle()
 
     StatisticScreenContent(
@@ -98,6 +106,11 @@ fun StatisticScreen(
         logCount = logCount,
         topBottleName = topBottleName,
         beverageDistribution = beverageDistribution,
+        weeklyDailyGoals = weeklyDailyGoals,
+        weeklyBestDay = weeklyBestDay,
+        weeklyWorstDay = weeklyWorstDay,
+        weeklyComparison = weeklyComparison,
+        weeklyBeverageBreakdown = weeklyBeverageBreakdown,
         totalMl = selectedDaySummary?.totalMl ?: 0f,
         goalMl = selectedDaySummary?.goalMl ?: 0f,
         onFilterSelected = viewModel::onFilterSelected,
@@ -118,6 +131,11 @@ fun StatisticScreenContent(
     logCount: Int,
     topBottleName: String?,
     beverageDistribution: Map<DrinkTypeEntity, Float>,
+    weeklyDailyGoals: List<DailyGoalProgress>,
+    weeklyBestDay: DaySummaryData?,
+    weeklyWorstDay: DaySummaryData?,
+    weeklyComparison: WeeklyComparisonData?,
+    weeklyBeverageBreakdown: List<BeverageBreakdownData>,
     totalMl: Float,
     goalMl: Float,
     onFilterSelected: (StatisticFilter) -> Unit,
@@ -284,19 +302,9 @@ fun StatisticScreenContent(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                item {
-                    BeverageTypeCard(
-                        beverageDistribution = beverageDistribution,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                            .animateItem()
-                    )
-                }
-
                 if (selectedFilter == StatisticFilter.Weekly) {
                     item {
-                        DailyMainBarChart(
+                        DailyMainBarChart( // todo implement weekly chart
                             chartYData = mainChartYData,
                             peakActivityHour = peakActivityHour,
                             modifier = Modifier
@@ -305,6 +313,70 @@ fun StatisticScreenContent(
                                 .animateItem()
                         )
                     }
+
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    item {
+                        WeeklyDailyGoalsCard(
+                            dailyGoals = weeklyDailyGoals,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .animateItem()
+                        )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    item {
+                        BestWorstDaySection(
+                            bestDay = weeklyBestDay,
+                            worstDay = weeklyWorstDay,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .animateItem()
+                        )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    item {
+                        HistoryComparisonCard(
+                            data = weeklyComparison,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .animateItem()
+                        )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+
+                item {
+                    BeverageTypeCard(
+                        beverageDistribution = if (selectedFilter == StatisticFilter.Weekly) weeklyBeverageBreakdown else beverageDistribution.map { (type, pct) ->
+                            BeverageBreakdownData(
+                                name = type.name,
+                                totalMl = 0f, // todo: Not specifically calculated for daily Map yet, but could be added if needed
+                                percentage = pct,
+                                hexColor = type.hexColor
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .animateItem()
+                    )
                 }
             }
         }
@@ -442,8 +514,14 @@ private fun DailyMainBarChart(
 
                 Text(
                     text = buildAnnotatedString {
-                        append("Peak activity at")
-                        append(" ")
+                        withStyle(
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = AquriTheme.colorScheme.lightText
+                            ).toSpanStyle()
+                        ) {
+                            append("Peak activity at")
+                            append(" ")
+                        }
 
                         withStyle(
                             style = MaterialTheme.typography.titleSmall.copy(
@@ -453,8 +531,7 @@ private fun DailyMainBarChart(
                         ) {
                             append(hourStr)
                         }
-                    },
-                    style = MaterialTheme.typography.bodyMedium
+                    }
                 )
             }
 
@@ -488,8 +565,8 @@ private fun DailyMainBarChart(
 private fun StatisticScreenPreview() {
     AquriTheme {
         StatisticScreenContent(
-            selectedFilter = StatisticFilter.Daily,
-            mainChartYData = listOf(5f, 6f, 5f, 2f, 11f, 8f, 5f, 2f, 15f, 11f, 8f, 13f, 12f, 10f, 2f, 7f),
+            selectedFilter = StatisticFilter.Weekly,
+            mainChartYData = listOf(5f, 6f, 5f, 2f, 11f, 8f, 5f),
             peakActivityHour = 8,
             logCount = 7,
             topBottleName = "Glass Cup",
@@ -497,6 +574,23 @@ private fun StatisticScreenPreview() {
                 DrinkTypeEntity(name = "Water", hexColor = "#006064") to 75f,
                 DrinkTypeEntity(name = "Tea", hexColor = "#26A69A") to 15f,
                 DrinkTypeEntity(name = "Coffee", hexColor = "#EF6C00") to 10f
+            ),
+            weeklyDailyGoals = listOf(
+                DailyGoalProgress("Mo", 1f, false),
+                DailyGoalProgress("Tu", 1f, false),
+                DailyGoalProgress("We", 0.4f, true),
+                DailyGoalProgress("Th", 0.6f, false),
+                DailyGoalProgress("Fr", 0.8f, false),
+                DailyGoalProgress("Sa", 0f, false),
+                DailyGoalProgress("Su", 0f, false)
+            ),
+            weeklyBestDay = DaySummaryData("Wednesday", 2800f),
+            weeklyWorstDay = DaySummaryData("Monday", 1200f),
+            weeklyComparison = WeeklyComparisonData(14.7f, 0.85f, 13.1f, 0.75f, 12.2f, 2100f),
+            weeklyBeverageBreakdown = listOf(
+                BeverageBreakdownData("Pure Water", 8400f, 57f, "#00ACC1"),
+                BeverageBreakdownData("Tea & Coffee", 3200f, 22f, "#EF6C00"),
+                BeverageBreakdownData("Juice & Other", 3100f, 21f, "#26A69A")
             ),
             totalMl = 1650f,
             goalMl = 2500f,

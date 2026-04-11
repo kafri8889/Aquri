@@ -7,6 +7,7 @@ import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
 import com.anafthdev.aquri.data.model.entity.HydrationLogWithBottle
 import com.anafthdev.aquri.data.repository.HydrationRepository
 import com.anafthdev.aquri.data.repository.UserRepository
+import com.anafthdev.aquri.utils.DateTimeUtils
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.stateIn
+import timber.log.Timber
 import java.util.Calendar
 import javax.inject.Inject
 
@@ -51,6 +53,21 @@ class StatisticViewModel @Inject constructor(
 
     private val _beverageDistribution = MutableStateFlow<Map<DrinkTypeEntity, Float>>(emptyMap())
     val beverageDistribution: StateFlow<Map<DrinkTypeEntity, Float>> = _beverageDistribution.asStateFlow()
+
+    private val _weeklyDailyGoals = MutableStateFlow<List<DailyGoalProgress>>(emptyList())
+    val weeklyDailyGoals: StateFlow<List<DailyGoalProgress>> = _weeklyDailyGoals.asStateFlow()
+
+    private val _weeklyBestDay = MutableStateFlow<DaySummaryData?>(null)
+    val weeklyBestDay: StateFlow<DaySummaryData?> = _weeklyBestDay.asStateFlow()
+
+    private val _weeklyWorstDay = MutableStateFlow<DaySummaryData?>(null)
+    val weeklyWorstDay: StateFlow<DaySummaryData?> = _weeklyWorstDay.asStateFlow()
+
+    private val _weeklyComparison = MutableStateFlow<WeeklyComparisonData?>(null)
+    val weeklyComparison: StateFlow<WeeklyComparisonData?> = _weeklyComparison.asStateFlow()
+
+    private val _weeklyBeverageBreakdown = MutableStateFlow<List<BeverageBreakdownData>>(emptyList())
+    val weeklyBeverageBreakdown: StateFlow<List<BeverageBreakdownData>> = _weeklyBeverageBreakdown.asStateFlow()
 
     val user = userRepository.getUser()
         .stateIn(
@@ -106,7 +123,7 @@ class StatisticViewModel @Inject constructor(
         )
 
     val selectedDaySummary: StateFlow<DailySummaryEntity?> = combine(_selectedDate, dailySummaries) { date, summaries ->
-        summaries.find { isSameDay(it.summaryDate, date) }
+        summaries.find { DateTimeUtils.isSameDay(it.summaryDate, date) }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -126,6 +143,26 @@ class StatisticViewModel @Inject constructor(
             _chartData.value = data
             
             _beverageDistribution.value = calculateBeverageDistribution(filter, date, allLogs, types)
+
+            if (filter == StatisticFilter.Weekly) {
+                _weeklyDailyGoals.value = calculateWeeklyDailyGoals(date, summaries)
+                
+                val weekSummaries = getWeekSummaries(date, summaries)
+                val bestDay = weekSummaries.maxByOrNull { it.totalMl }?.toDaySummaryData()
+                val worstDay = weekSummaries.minByOrNull { it.totalMl }?.toDaySummaryData()
+
+                _weeklyBestDay.value = bestDay
+                _weeklyWorstDay.value = if (bestDay == worstDay) null else worstDay
+
+                _weeklyComparison.value = calculateWeeklyComparison(date, summaries)
+                _weeklyBeverageBreakdown.value = calculateDetailedBeverageBreakdown(filter, date, allLogs, types)
+            } else {
+                _weeklyDailyGoals.value = emptyList()
+                _weeklyBestDay.value = null
+                _weeklyWorstDay.value = null
+                _weeklyComparison.value = null
+                _weeklyBeverageBreakdown.value = emptyList()
+            }
 
             if (filter == StatisticFilter.Daily) {
                 _peakActivityHour.value = data.indexOfMax()?.takeIf { data[it] > 0 }
@@ -159,18 +196,18 @@ class StatisticViewModel @Inject constructor(
     ): Map<DrinkTypeEntity, Float> {
         val calendar = Calendar.getInstance().apply { timeInMillis = date }
         val filteredLogs = when (filter) {
-            StatisticFilter.Daily -> logs.filter { isSameDay(it.log.logDate, date) }
+            StatisticFilter.Daily -> logs.filter { DateTimeUtils.isSameDay(it.log.logDate, date) }
             StatisticFilter.Weekly -> {
-                val cal = calendar.clone() as Calendar
-                cal.set(Calendar.DAY_OF_WEEK, cal.firstDayOfWeek)
-                val start = cal.timeInMillis
-                cal.add(Calendar.DAY_OF_WEEK, 6)
-                val end = cal.timeInMillis
+                val (start, end) = DateTimeUtils.getWeekRange(date)
                 logs.filter { it.log.logDate in start..end }
             }
             StatisticFilter.Monthly -> {
                 val cal = calendar.clone() as Calendar
                 cal.set(Calendar.DAY_OF_MONTH, 1)
+                cal.set(Calendar.HOUR_OF_DAY, 0)
+                cal.set(Calendar.MINUTE, 0)
+                cal.set(Calendar.SECOND, 0)
+                cal.set(Calendar.MILLISECOND, 0)
                 val start = cal.timeInMillis
                 cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH))
                 val end = cal.timeInMillis
@@ -179,6 +216,10 @@ class StatisticViewModel @Inject constructor(
             StatisticFilter.Yearly -> {
                 val cal = calendar.clone() as Calendar
                 cal.set(Calendar.DAY_OF_YEAR, 1)
+                cal.set(Calendar.HOUR_OF_DAY, 0)
+                cal.set(Calendar.MINUTE, 0)
+                cal.set(Calendar.SECOND, 0)
+                cal.set(Calendar.MILLISECOND, 0)
                 val start = cal.timeInMillis
                 cal.set(Calendar.DAY_OF_YEAR, cal.getActualMaximum(Calendar.DAY_OF_YEAR))
                 val end = cal.timeInMillis
@@ -196,6 +237,102 @@ class StatisticViewModel @Inject constructor(
                 val drinkAmount = drinkLogs.sumOf { it.log.amountMl.toDouble() }.toFloat()
                 type to (drinkAmount / totalAmount) * 100f
             }.toMap()
+    }
+
+    private fun calculateWeeklyDailyGoals(
+        date: Long,
+        summaries: List<DailySummaryEntity>
+    ): List<DailyGoalProgress> {
+        val (start, _) = DateTimeUtils.getWeekRange(date)
+        val calendar = Calendar.getInstance().apply { timeInMillis = start }
+        
+        val dayNames = listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
+        
+        return List(7) { i ->
+            val currentDay = calendar.timeInMillis
+            val summary = summaries.find { DateTimeUtils.isSameDay(it.summaryDate, currentDay) }
+            val isSelectedDay = DateTimeUtils.isSameDay(currentDay, date)
+            
+            val progress = summary?.completionPct ?: 0f
+            
+            val goal = DailyGoalProgress(
+                dayName = dayNames[i],
+                progress = progress,
+                isSelected = isSelectedDay
+            )
+            calendar.add(Calendar.DAY_OF_YEAR, 1)
+            goal
+        }
+    }
+
+    private fun getWeekSummaries(date: Long, summaries: List<DailySummaryEntity>): List<DailySummaryEntity> {
+        val (start, end) = DateTimeUtils.getWeekRange(date)
+
+        Timber.i("makse star: $start")
+        Timber.i("makse en: $end")
+
+        return summaries.filter { it.summaryDate in start..end }
+    }
+
+    private fun calculateWeeklyComparison(date: Long, summaries: List<DailySummaryEntity>): WeeklyComparisonData {
+        val (thisWeekStart, thisWeekEnd) = DateTimeUtils.getWeekRange(date)
+        val thisWeekSummaries = summaries.filter { it.summaryDate in thisWeekStart..thisWeekEnd }
+        val thisWeekTotal = thisWeekSummaries.sumOf { it.totalMl.toDouble() }.toFloat()
+        val thisWeekGoal = thisWeekSummaries.sumOf { it.goalMl.toDouble() }.toFloat().takeIf { it > 0 } ?: (2500f * 7) // fallback to default
+        
+        // Last Week
+        val (lastWeekStart, lastWeekEnd) = DateTimeUtils.getWeekRange(thisWeekStart - 24 * 60 * 60 * 1000)
+        val lastWeekSummaries = summaries.filter { it.summaryDate in lastWeekStart..lastWeekEnd }
+        val lastWeekTotal = lastWeekSummaries.sumOf { it.totalMl.toDouble() }.toFloat()
+        val lastWeekGoal = lastWeekSummaries.sumOf { it.goalMl.toDouble() }.toFloat().takeIf { it > 0 } ?: (2500f * 7)
+        
+        val trend = if (lastWeekTotal > 0) ((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100f else 0f
+        
+        // Average Daily
+        val activeDays = thisWeekSummaries.filter { it.totalMl > 0 }.size
+        val averageDaily = if (activeDays > 0) thisWeekTotal / activeDays else 0f
+
+        return WeeklyComparisonData(
+            thisWeekTotalLiters = thisWeekTotal / 1000f,
+            thisWeekProgress = (thisWeekTotal / thisWeekGoal).coerceIn(0f, 1f),
+            lastWeekTotalLiters = lastWeekTotal / 1000f,
+            lastWeekProgress = (lastWeekTotal / lastWeekGoal).coerceIn(0f, 1f),
+            trendPercentage = trend,
+            averageDailyMl = averageDaily
+        )
+    }
+
+    private fun calculateDetailedBeverageBreakdown(
+        filter: StatisticFilter,
+        date: Long,
+        logs: List<HydrationLogWithBottle>,
+        types: List<DrinkTypeEntity>
+    ): List<BeverageBreakdownData> {
+        val distribution = calculateBeverageDistribution(filter, date, logs, types)
+        
+        val weekLogs = when (filter) {
+            StatisticFilter.Weekly -> {
+                val (start, end) = DateTimeUtils.getWeekRange(date)
+                logs.filter { it.log.logDate in start..end }
+            }
+            else -> emptyList()
+        }
+
+        return distribution.map { (type, percentage) ->
+            val totalMl = weekLogs.filter { it.log.drinkTypeId == type.id }.sumOf { it.log.amountMl.toDouble() }.toFloat()
+            BeverageBreakdownData(
+                name = type.name,
+                totalMl = totalMl,
+                percentage = percentage,
+                hexColor = type.hexColor
+            )
+        }.sortedByDescending { it.percentage }
+    }
+
+    private fun DailySummaryEntity.toDaySummaryData(): DaySummaryData {
+        val calendar = Calendar.getInstance().apply { timeInMillis = summaryDate }
+        val dayName = calendar.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, java.util.Locale.getDefault()) ?: ""
+        return DaySummaryData(dayName, totalMl)
     }
 
     private fun prepareData(
@@ -220,12 +357,12 @@ class StatisticViewModel @Inject constructor(
                 hourlyData.toList()
             }
             StatisticFilter.Weekly -> {
-                val cal = calendar.clone() as Calendar
-                cal.set(Calendar.DAY_OF_WEEK, cal.firstDayOfWeek)
+                val (start, _) = DateTimeUtils.getWeekRange(date)
+                val cal = Calendar.getInstance().apply { timeInMillis = start }
                 val weekData = mutableListOf<Float>()
                 repeat(7) {
                     val currentDay = cal.timeInMillis
-                    val summary = summaries.find { isSameDay(it.summaryDate, currentDay) }
+                    val summary = summaries.find { DateTimeUtils.isSameDay(it.summaryDate, currentDay) }
                     weekData.add(summary?.totalMl ?: 0f)
                     cal.add(Calendar.DAY_OF_YEAR, 1)
                 }
@@ -234,11 +371,15 @@ class StatisticViewModel @Inject constructor(
             StatisticFilter.Monthly -> {
                 val cal = calendar.clone() as Calendar
                 cal.set(Calendar.DAY_OF_MONTH, 1)
+                cal.set(Calendar.HOUR_OF_DAY, 0)
+                cal.set(Calendar.MINUTE, 0)
+                cal.set(Calendar.SECOND, 0)
+                cal.set(Calendar.MILLISECOND, 0)
                 val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
                 val monthData = mutableListOf<Float>()
                 repeat(maxDay) {
                     val currentDay = cal.timeInMillis
-                    val summary = summaries.find { isSameDay(it.summaryDate, currentDay) }
+                    val summary = summaries.find { DateTimeUtils.isSameDay(it.summaryDate, currentDay) }
                     monthData.add(summary?.totalMl ?: 0f)
                     cal.add(Calendar.DAY_OF_YEAR, 1)
                 }
@@ -257,13 +398,6 @@ class StatisticViewModel @Inject constructor(
                 yearData
             }
         }
-    }
-
-    private fun isSameDay(date1: Long, date2: Long): Boolean {
-        val cal1 = Calendar.getInstance().apply { timeInMillis = date1 }
-        val cal2 = Calendar.getInstance().apply { timeInMillis = date2 }
-        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
-                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
     }
 
     fun onFilterSelected(filter: StatisticFilter) {
@@ -306,3 +440,30 @@ enum class StatisticFilter {
     Monthly,
     Yearly
 }
+
+data class DailyGoalProgress(
+    val dayName: String,
+    val progress: Float,
+    val isSelected: Boolean
+)
+
+data class DaySummaryData(
+    val dayName: String,
+    val totalMl: Float
+)
+
+data class WeeklyComparisonData(
+    val thisWeekTotalLiters: Float,
+    val thisWeekProgress: Float,
+    val lastWeekTotalLiters: Float,
+    val lastWeekProgress: Float,
+    val trendPercentage: Float,
+    val averageDailyMl: Float
+)
+
+data class BeverageBreakdownData(
+    val name: String,
+    val totalMl: Float,
+    val percentage: Float,
+    val hexColor: String
+)
