@@ -31,6 +31,8 @@ data class BottleEntity(
 ) {
 
     companion object {
+        val OTHER_BOTTLE_ID = UUID.fromString("00000000-0000-0000-0000-000000000000")
+
         val predefinedBottles = listOf(
             BottleEntity(
                 id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
@@ -55,6 +57,12 @@ data class BottleEntity(
                 name = "Large Bottle",
                 volumeMl = 750f,
                 icon = DrinkBottleIcon.WaterBottleLarge.name
+            ),
+            BottleEntity(
+                id = OTHER_BOTTLE_ID,
+                name = "Other",
+                volumeMl = 0f,
+                icon = DrinkBottleIcon.Bottle1.name
             )
         )
     }

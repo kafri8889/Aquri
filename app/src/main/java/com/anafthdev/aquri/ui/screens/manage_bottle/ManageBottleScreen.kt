@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
@@ -45,9 +48,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -73,6 +78,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.anafthdev.aquri.data.model.entity.BottleEntity
@@ -108,21 +114,7 @@ fun ManageBottleScreen(
     val drinkTypeSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
+    Scaffold { innerPadding ->
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             modifier = Modifier
@@ -134,25 +126,46 @@ fun ManageBottleScreen(
         ) {
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Column {
+                    TopAppBar(
+                        windowInsets = WindowInsets(),
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent
+                        ),
+                        title = {},
+                        navigationIcon = {
+                            IconButton(onClick = onNavigateBack) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back"
+                                )
+                            }
+                        }
+                    )
+
                     Text(
-                        text = "Manage Vessels",
+                        text = "Manage Bottles",
                         style = MaterialTheme.typography.displaySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "Customize your dashboard slots and beverage types.",
+                        text = "Configure your dashboard and drink types for a better tracking experience.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                     )
                     
-                    Spacer(modifier = Modifier.height(32.dp))
-                    
-                    Text(
-                        text = "Dashboard Slots",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Spacer(modifier = Modifier.height(36.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(4.dp, 16.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Dashboard Slots",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
@@ -185,14 +198,18 @@ fun ManageBottleScreen(
                     
                     Spacer(modifier = Modifier.height(48.dp))
                     
-                    Text(
-                        text = "DEFAULT BOTTLES",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(4.dp, 16.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Default Bottles",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
                     
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
             
@@ -218,14 +235,20 @@ fun ManageBottleScreen(
             
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Column {
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(4.dp, 16.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "My Custom Bottles",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "MY CUSTOM BOTTLES",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
             
@@ -264,13 +287,19 @@ fun ManageBottleScreen(
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Column {
                     Spacer(modifier = Modifier.height(48.dp))
-                    Text(
-                        text = "DRINK TYPES",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(4.dp, 16.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Drink Types",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
 
@@ -287,14 +316,20 @@ fun ManageBottleScreen(
 
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Column {
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(4.dp, 16.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "My Custom Drink Types",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "MY CUSTOM DRINK TYPES",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
 
@@ -455,6 +490,12 @@ fun DashboardSlot(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.24f)
+    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f)
+    
+    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary 
+    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
@@ -464,43 +505,54 @@ fun DashboardSlot(
                 .fillMaxWidth()
                 .fillMaxHeight()
                 .clip(RoundedCornerShape(32.dp))
-                .background(
-                    if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                )
-                .border(
-                    width = 2.dp,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                    shape = RoundedCornerShape(32.dp)
+                .background(containerColor)
+                .then(
+                    if (bottle == null && !isSelected) {
+                        Modifier.drawBehindDashedBorder(borderColor)
+                    } else {
+                        Modifier.border(2.dp, borderColor, RoundedCornerShape(32.dp))
+                    }
                 )
                 .clickable { onClick() }
-                .padding(8.dp),
+                .padding(12.dp),
             contentAlignment = Alignment.Center
         ) {
             if (bottle != null) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Icon(
-                        painter = painterResource(
-                            id = bottle.icon.let { DrinkBottleIcon.fromString(it).resId }
-                        ),
-                        contentDescription = null,
-                        tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .background(
+                                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                id = bottle.icon.let { DrinkBottleIcon.fromString(it).resId }
+                            ),
+                            contentDescription = null,
+                            tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "${bottle.volumeMl.toInt()}ml",
                         style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Black,
                         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = bottle.name,
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.labelSmall,
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -509,20 +561,32 @@ fun DashboardSlot(
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = borderColor,
                     modifier = Modifier.size(24.dp)
                 )
             }
         }
         
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         
-        Text(
-            text = "SLOT $index",
-            style = MaterialTheme.typography.labelSmall,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-        )
+        Surface(
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.height(24.dp)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.padding(horizontal = 12.dp)
+            ) {
+                Text(
+                    text = "SLOT $index",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.sp
+                )
+            }
+        }
     }
 }
 
@@ -532,13 +596,21 @@ fun BottleListItem(
     isAssignedToCurrentSlot: Boolean,
     onClick: () -> Unit
 ) {
+    val containerColor = if (isAssignedToCurrentSlot) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.24f)
+    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f)
+
     Card(
-        shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(74.dp)
-            .clickable { onClick() }
+            .height(72.dp)
+            .border(
+                width = 1.5.dp,
+                color = if (isAssignedToCurrentSlot) MaterialTheme.colorScheme.primary else Color.Transparent,
+                shape = RoundedCornerShape(24.dp)
+            )
     ) {
         Row(
             modifier = Modifier
@@ -550,14 +622,18 @@ fun BottleListItem(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp)),
+                        .size(44.dp)
+                        .background(
+                            if (isAssignedToCurrentSlot) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            RoundedCornerShape(12.dp)
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         painter = painterResource(id = DrinkBottleIcon.fromString(bottle.icon).resId),
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = if (isAssignedToCurrentSlot) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -565,39 +641,25 @@ fun BottleListItem(
                 Column {
                     Text(
                         text = bottle.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Black,
+                        color = if (isAssignedToCurrentSlot) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "${bottle.volumeMl.toInt()}ml \u2022 Predefined",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "${bottle.volumeMl.toInt()}ml",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (isAssignedToCurrentSlot) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
             
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .border(
-                        width = 2.dp,
-                        color = if (isAssignedToCurrentSlot) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                        shape = CircleShape
-                    )
-                    .background(
-                        if (isAssignedToCurrentSlot) MaterialTheme.colorScheme.primary else Color.Transparent,
-                        CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                if (isAssignedToCurrentSlot) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
+            if (isAssignedToCurrentSlot) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
     }
@@ -608,40 +670,50 @@ fun DrinkTypeListItem(
     drinkType: DrinkTypeEntity,
     onClick: () -> Unit
 ) {
+    val drinkColor = Color(drinkType.hexColor.toColorInt())
+    
     Card(
-        shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = drinkColor.copy(alpha = 0.08f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp)
+            .height(64.dp)
+            .border(1.dp, drinkColor.copy(alpha = 0.2f), RoundedCornerShape(24.dp))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(drinkColor.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
                 Box(
                     modifier = Modifier
-                        .size(24.dp)
-                        .background(Color(drinkType.hexColor.toColorInt()), CircleShape)
+                        .size(16.dp)
+                        .background(drinkColor, CircleShape)
+                        .border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape)
                 )
-                Spacer(modifier = Modifier.width(16.dp))
-                Column {
-                    Text(
-                        text = drinkType.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Predefined Type",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(
+                    text = drinkType.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Black,
+                    color = drinkColor.copy(alpha = 0.8f)
+                )
+                Text(
+                    text = "Standard Type",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = drinkColor.copy(alpha = 0.6f)
+                )
             }
         }
     }
@@ -660,48 +732,38 @@ fun CustomBottleCard(
 
     Card(
         shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isAssigned) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = modifier
+            .border(
+                width = 2.dp,
+                color = if (isAssigned) MaterialTheme.colorScheme.primary else Color.Transparent,
+                shape = RoundedCornerShape(32.dp)
+            )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                horizontalArrangement = Arrangement.End
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .background(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                            CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = DrinkBottleIcon.fromString(bottle.icon).resId),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-
                 Box {
                     IconButton(
                         onClick = { showMenu = true },
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(24.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
                             contentDescription = "More",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = if (isAssigned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
 
@@ -725,41 +787,66 @@ fun CustomBottleCard(
                 }
             }
 
-            Column {
-                Text(
-                    text = bottle.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "${bottle.volumeMl.toInt()}ml",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .background(
+                        if (isAssigned) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = DrinkBottleIcon.fromString(bottle.icon).resId),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
                 )
             }
 
-            if (isAssigned) {
-                Button(
-                    onClick = { /* Already assigned */ },
-                    shape = RoundedCornerShape(24.dp),
-                    enabled = false,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Assigned", fontWeight = FontWeight.Bold)
-                }
-            } else {
-                Button(
-                    onClick = onClick,
-                    shape = RoundedCornerShape(24.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        contentColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Text("Assign", fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = bottle.name,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Black,
+                color = if (isAssigned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+            
+            Text(
+                text = "${bottle.volumeMl.toInt()}ml",
+                style = MaterialTheme.typography.labelMedium,
+                color = if (isAssigned) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = onClick,
+                shape = RoundedCornerShape(16.dp),
+                enabled = !isAssigned,
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                modifier = Modifier.fillMaxWidth().height(36.dp),
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                    containerColor = if (isAssigned) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    else MaterialTheme.colorScheme.primary,
+                    contentColor = if (isAssigned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                if (isAssigned) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Active", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Black)
+                    }
+                } else {
+                    Text("Select", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Black)
                 }
             }
         }
@@ -774,69 +861,77 @@ fun CustomDrinkTypeCard(
     modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    val drinkColor = Color(android.graphics.Color.parseColor(drinkType.hexColor))
 
     Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        modifier = modifier
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = drinkColor.copy(alpha = 0.15f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = modifier.border(1.5.dp, drinkColor.copy(alpha = 0.3f), RoundedCornerShape(28.dp))
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
-                        .background(Color(android.graphics.Color.parseColor(drinkType.hexColor)), CircleShape)
+                        .size(36.dp)
+                        .background(drinkColor, CircleShape)
+                        .border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape)
                 )
-
-                Box {
-                    IconButton(
-                        onClick = { showMenu = true },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "More",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    AquriDropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false },
-                        items = listOf(
-                            AquriDropdownMenuItem(
-                                text = "Edit",
-                                icon = AquriDropdownIcon.Vector(Icons.Default.Edit),
-                                onClick = onEdit
-                            ),
-                            AquriDropdownMenuItem(
-                                text = "Delete",
-                                icon = AquriDropdownIcon.Vector(Icons.Default.Delete),
-                                isDestructive = true,
-                                onClick = onDelete
-                            )
-                        )
-                    )
-                }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                Text(
+                    text = drinkType.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Black,
+                    color = drinkColor.copy(alpha = 0.8f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
 
-            Text(
-                text = drinkType.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                overflow = TextOverflow.Ellipsis
-            )
+            Box {
+                IconButton(
+                    onClick = { showMenu = true },
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "More",
+                        tint = drinkColor.copy(alpha = 0.6f),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                AquriDropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false },
+                    items = listOf(
+                        AquriDropdownMenuItem(
+                            text = "Edit",
+                            icon = AquriDropdownIcon.Vector(Icons.Default.Edit),
+                            onClick = onEdit
+                        ),
+                        AquriDropdownMenuItem(
+                            text = "Delete",
+                            icon = AquriDropdownIcon.Vector(Icons.Default.Delete),
+                            isDestructive = true,
+                            onClick = onDelete
+                        )
+                    )
+                )
+            }
         }
     }
 }
@@ -849,24 +944,31 @@ fun CreateNewCard(
 ) {
     Box(
         modifier = modifier
-            .aspectRatio(1f)
+            .aspectRatio(1.2f)
             .clip(RoundedCornerShape(32.dp))
             .clickable { onClick() }
-            .drawBehindDashedBorder(MaterialTheme.colorScheme.outlineVariant),
+            .drawBehindDashedBorder(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = text,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.primary
             )
         }

@@ -131,7 +131,7 @@ class HomeViewModel @Inject constructor(
             initialValue = null
         )
 
-    fun logDrink(bottle: BottleEntity, drinkType: DrinkTypeEntity, timestamp: Long) {
+    fun logDrink(bottle: BottleEntity, drinkType: DrinkTypeEntity, timestamp: Long, customAmount: Float? = null) {
         viewModelScope.launch {
             val currentUser = user.value ?: return@launch
             
@@ -141,7 +141,7 @@ class HomeViewModel @Inject constructor(
                 HydrationLogEntity(
                     userId = currentUser.id,
                     bottleId = bottle.id,
-                    amountMl = bottle.volumeMl,
+                    amountMl = if (bottle.id == BottleEntity.OTHER_BOTTLE_ID) customAmount ?: 0f else bottle.volumeMl,
                     bottleName = bottle.name,
                     drinkTypeId = drinkType.id,
                     loggedAt = timestamp,
@@ -153,7 +153,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun updateLog(log: HydrationLogEntity, bottle: BottleEntity, drinkType: DrinkTypeEntity, timestamp: Long) {
+    fun updateLog(log: HydrationLogEntity, bottle: BottleEntity, drinkType: DrinkTypeEntity, timestamp: Long, customAmount: Float? = null) {
         viewModelScope.launch {
             val currentUser = user.value ?: return@launch
             val oldLogDate = log.logDate
@@ -163,7 +163,7 @@ class HomeViewModel @Inject constructor(
             hydrationRepository.updateLog(
                 log.copy(
                     bottleId = bottle.id,
-                    amountMl = bottle.volumeMl,
+                    amountMl = if (bottle.id == BottleEntity.OTHER_BOTTLE_ID) customAmount ?: 0f else bottle.volumeMl,
                     bottleName = bottle.name,
                     drinkTypeId = drinkType.id,
                     loggedAt = timestamp,

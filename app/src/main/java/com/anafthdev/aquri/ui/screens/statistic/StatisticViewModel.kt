@@ -51,8 +51,8 @@ class StatisticViewModel @Inject constructor(
     private val _topBottleName = MutableStateFlow<String?>(null)
     val topBottleName: StateFlow<String?> = _topBottleName.asStateFlow()
 
-    private val _beverageDistribution = MutableStateFlow<Map<DrinkTypeEntity, Float>>(emptyMap())
-    val beverageDistribution: StateFlow<Map<DrinkTypeEntity, Float>> = _beverageDistribution.asStateFlow()
+    private val _detailedBeverageDistribution = MutableStateFlow<List<BeverageBreakdownData>>(emptyList())
+    val detailedBeverageDistribution: StateFlow<List<BeverageBreakdownData>> = _detailedBeverageDistribution.asStateFlow()
 
     private val _weeklyDailyGoals = MutableStateFlow<List<DailyGoalProgress>>(emptyList())
     val weeklyDailyGoals: StateFlow<List<DailyGoalProgress>> = _weeklyDailyGoals.asStateFlow()
@@ -65,9 +65,6 @@ class StatisticViewModel @Inject constructor(
 
     private val _weeklyComparison = MutableStateFlow<WeeklyComparisonData?>(null)
     val weeklyComparison: StateFlow<WeeklyComparisonData?> = _weeklyComparison.asStateFlow()
-
-    private val _weeklyBeverageBreakdown = MutableStateFlow<List<BeverageBreakdownData>>(emptyList())
-    val weeklyBeverageBreakdown: StateFlow<List<BeverageBreakdownData>> = _weeklyBeverageBreakdown.asStateFlow()
 
     val user = userRepository.getUser()
         .stateIn(
@@ -142,7 +139,7 @@ class StatisticViewModel @Inject constructor(
             val data = prepareData(filter, date, summaries, logs)
             _chartData.value = data
             
-            _beverageDistribution.value = calculateBeverageDistribution(filter, date, allLogs, types)
+            _detailedBeverageDistribution.value = calculateDetailedBeverageBreakdown(filter, date, allLogs, types)
 
             if (filter == StatisticFilter.Weekly) {
                 _weeklyDailyGoals.value = calculateWeeklyDailyGoals(date, summaries)
@@ -153,15 +150,12 @@ class StatisticViewModel @Inject constructor(
 
                 _weeklyBestDay.value = bestDay
                 _weeklyWorstDay.value = if (bestDay == worstDay) null else worstDay
-
                 _weeklyComparison.value = calculateWeeklyComparison(date, summaries)
-                _weeklyBeverageBreakdown.value = calculateDetailedBeverageBreakdown(filter, date, allLogs, types)
             } else {
                 _weeklyDailyGoals.value = emptyList()
                 _weeklyBestDay.value = null
                 _weeklyWorstDay.value = null
                 _weeklyComparison.value = null
-                _weeklyBeverageBreakdown.value = emptyList()
             }
 
             if (filter == StatisticFilter.Daily) {
@@ -188,18 +182,25 @@ class StatisticViewModel @Inject constructor(
         return maxIndex
     }
 
-    private fun calculateBeverageDistribution(
+    private fun getFilteredLogs(
         filter: StatisticFilter,
         date: Long,
-        logs: List<HydrationLogWithBottle>,
-        types: List<DrinkTypeEntity>
-    ): Map<DrinkTypeEntity, Float> {
+        logs: List<HydrationLogWithBottle>
+    ): List<HydrationLogWithBottle> {
         val calendar = Calendar.getInstance().apply { timeInMillis = date }
-        val filteredLogs = when (filter) {
+        return when (filter) {
             StatisticFilter.Daily -> logs.filter { DateTimeUtils.isSameDay(it.log.logDate, date) }
             StatisticFilter.Weekly -> {
                 val (start, end) = DateTimeUtils.getWeekRange(date)
-                logs.filter { it.log.logDate in start..end }
+                // getWeekRange currently returns start of Sunday, so we make it inclusive of Sunday
+                val inclusiveEnd = Calendar.getInstance().apply {
+                    timeInMillis = end
+                    set(Calendar.HOUR_OF_DAY, 23)
+                    set(Calendar.MINUTE, 59)
+                    set(Calendar.SECOND, 59)
+                    set(Calendar.MILLISECOND, 999)
+                }.timeInMillis
+                logs.filter { it.log.logDate in start..inclusiveEnd }
             }
             StatisticFilter.Monthly -> {
                 val cal = calendar.clone() as Calendar
@@ -210,6 +211,10 @@ class StatisticViewModel @Inject constructor(
                 cal.set(Calendar.MILLISECOND, 0)
                 val start = cal.timeInMillis
                 cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH))
+                cal.set(Calendar.HOUR_OF_DAY, 23)
+                cal.set(Calendar.MINUTE, 59)
+                cal.set(Calendar.SECOND, 59)
+                cal.set(Calendar.MILLISECOND, 999)
                 val end = cal.timeInMillis
                 logs.filter { it.log.logDate in start..end }
             }
@@ -222,21 +227,14 @@ class StatisticViewModel @Inject constructor(
                 cal.set(Calendar.MILLISECOND, 0)
                 val start = cal.timeInMillis
                 cal.set(Calendar.DAY_OF_YEAR, cal.getActualMaximum(Calendar.DAY_OF_YEAR))
+                cal.set(Calendar.HOUR_OF_DAY, 23)
+                cal.set(Calendar.MINUTE, 59)
+                cal.set(Calendar.SECOND, 59)
+                cal.set(Calendar.MILLISECOND, 999)
                 val end = cal.timeInMillis
                 logs.filter { it.log.logDate in start..end }
             }
         }
-
-        if (filteredLogs.isEmpty()) return emptyMap()
-
-        val totalAmount = filteredLogs.sumOf { it.log.amountMl.toDouble() }.toFloat()
-        return filteredLogs
-            .groupBy { it.log.drinkTypeId }
-            .mapNotNull { (typeId, drinkLogs) ->
-                val type = types.find { it.id == typeId } ?: return@mapNotNull null
-                val drinkAmount = drinkLogs.sumOf { it.log.amountMl.toDouble() }.toFloat()
-                type to (drinkAmount / totalAmount) * 100f
-            }.toMap()
     }
 
     private fun calculateWeeklyDailyGoals(
@@ -308,25 +306,23 @@ class StatisticViewModel @Inject constructor(
         logs: List<HydrationLogWithBottle>,
         types: List<DrinkTypeEntity>
     ): List<BeverageBreakdownData> {
-        val distribution = calculateBeverageDistribution(filter, date, logs, types)
-        
-        val weekLogs = when (filter) {
-            StatisticFilter.Weekly -> {
-                val (start, end) = DateTimeUtils.getWeekRange(date)
-                logs.filter { it.log.logDate in start..end }
-            }
-            else -> emptyList()
-        }
+        val filteredLogs = getFilteredLogs(filter, date, logs)
+        if (filteredLogs.isEmpty()) return emptyList()
 
-        return distribution.map { (type, percentage) ->
-            val totalMl = weekLogs.filter { it.log.drinkTypeId == type.id }.sumOf { it.log.amountMl.toDouble() }.toFloat()
-            BeverageBreakdownData(
-                name = type.name,
-                totalMl = totalMl,
-                percentage = percentage,
-                hexColor = type.hexColor
-            )
-        }.sortedByDescending { it.percentage }
+        val totalAmount = filteredLogs.sumOf { it.log.amountMl.toDouble() }.toFloat()
+
+        return filteredLogs
+            .groupBy { it.log.drinkTypeId }
+            .mapNotNull { (typeId, drinkLogs) ->
+                val type = types.find { it.id == typeId } ?: return@mapNotNull null
+                val drinkAmount = drinkLogs.sumOf { it.log.amountMl.toDouble() }.toFloat()
+                BeverageBreakdownData(
+                    name = type.name,
+                    totalMl = drinkAmount,
+                    percentage = (drinkAmount / totalAmount) * 100f,
+                    hexColor = type.hexColor
+                )
+            }.sortedByDescending { it.percentage }
     }
 
     private fun DailySummaryEntity.toDaySummaryData(): DaySummaryData {

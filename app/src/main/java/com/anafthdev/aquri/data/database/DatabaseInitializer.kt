@@ -12,9 +12,16 @@ class DatabaseInitializer @Inject constructor(
     private val hydrationRepository: HydrationRepository
 ) {
     suspend fun initialize() {
-        val bottles = hydrationRepository.getAllBottles().first()
-        if (bottles.isEmpty()) {
+        val currentBottles = hydrationRepository.getAllBottles().first()
+        if (currentBottles.isEmpty()) {
             BottleEntity.predefinedBottles.forEach { hydrationRepository.insertBottle(it) }
+        } else {
+            // Ensure Other bottle exists
+            if (currentBottles.none { it.id == BottleEntity.OTHER_BOTTLE_ID }) {
+                BottleEntity.predefinedBottles.find { it.id == BottleEntity.OTHER_BOTTLE_ID }?.let {
+                    hydrationRepository.insertBottle(it)
+                }
+            }
         }
 
         val drinkTypes = hydrationRepository.getAllDrinkTypes().first()

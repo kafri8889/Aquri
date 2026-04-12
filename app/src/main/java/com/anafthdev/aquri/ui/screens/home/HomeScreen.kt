@@ -2,7 +2,6 @@ package com.anafthdev.aquri.ui.screens.home
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -52,16 +51,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -80,6 +88,9 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -191,11 +202,11 @@ fun HomeScreen(
                 drinkTypes = drinkTypes,
                 existingLog = selectedLog,
                 initialSelectedBottle = selectedBottle,
-                onSave = { bottle, type, time ->
+                onSave = { bottle, type, time, customAmount ->
                     if (selectedLog != null) {
-                        viewModel.updateLog(selectedLog!!.log, bottle, type, time)
+                        viewModel.updateLog(selectedLog!!.log, bottle, type, time, customAmount)
                     } else {
-                        viewModel.logDrink(bottle, type, time)
+                        viewModel.logDrink(bottle, type, time, customAmount)
                     }
                     scope.launch { sheetState.hide() }.invokeOnCompletion {
                         if (!sheetState.isVisible) {
@@ -244,72 +255,163 @@ private fun HeroSection(
     val goalMl = dailySummary?.goalMl?.takeIf { it > 0 } ?: user?.dailyGoalMl ?: Constant.MIN_DAILY_GOAL
     val progress = if (goalMl > 0) totalMl / goalMl else 0f
 
-    Box(
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-            .padding(top = 24.dp)
+            .padding(top = 16.dp)
     ) {
-        Card(
-            shape = RoundedCornerShape(48.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            ),
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .size(288.dp, 320.dp)
+        Box(
+            modifier = Modifier.size(280.dp)
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                WaveAnimation(
-                    modifier = Modifier.fillMaxSize(),
-                    progress = progress,
-                    color = MaterialTheme.colorScheme.primary,
-                    amplitude = 20f,
-                    frequency = 0.015f
+            // Gauge Background & Ticks
+            val gaugeColor = MaterialTheme.colorScheme.surfaceVariant
+            val primaryColor = MaterialTheme.colorScheme.primary
+            
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val strokeWidth = 24.dp.toPx()
+                val radius = (size.minDimension - strokeWidth) / 2
+                val center = Offset(size.width / 2, size.height / 2)
+                
+                // Draw background track
+                drawArc(
+                    color = gaugeColor,
+                    startAngle = 135f,
+                    sweepAngle = 270f,
+                    useCenter = false,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                 )
 
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .size(192.dp, 128.dp)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(MaterialTheme.colorScheme.background)
-                        .padding(8.dp)
-                        .align(Alignment.Center)
-                ) {
-                    Text(
-                        text = "Current Intake".uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
+                // Draw progress track
+                drawArc(
+                    color = primaryColor,
+                    startAngle = 135f,
+                    sweepAngle = 270f * progress.coerceIn(0f, 1f),
+                    useCenter = false,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                )
+
+                // Draw ticks
+                val tickCount = 24
+                val tickLength = 8.dp.toPx()
+                val tickStartRadius = radius - strokeWidth / 2 - 12.dp.toPx()
+
+                for (i in 0..tickCount) {
+                    val angleInDegrees = 135f + (270f * i / tickCount)
+                    val angleInRadians = angleInDegrees * PI / 180f
+
+                    val start = Offset(
+                        center.x + tickStartRadius * cos(angleInRadians).toFloat(),
+                        center.y + tickStartRadius * sin(angleInRadians).toFloat()
+                    )
+                    val end = Offset(
+                        center.x + (tickStartRadius - tickLength) * cos(angleInRadians).toFloat(),
+                        center.y + (tickStartRadius - tickLength) * sin(angleInRadians).toFloat()
                     )
 
-                    Text(
-                        text = buildAnnotatedString {
-                            withStyle(
-                                style = MaterialTheme.typography.displayLarge.copy(
-                                    fontSize = 48.sp,
-                                    letterSpacing = (-3).sp,
-                                    fontWeight = FontWeight.ExtraBold
-                                ).toSpanStyle()
-                            ) { append(totalMl.toInt().toString()) }
-
-                            withStyle(
-                                style = MaterialTheme.typography.titleLarge.copy(fontSize = 24.sp).toSpanStyle()
-                            ) { append("ml") }
-                        },
-                        maxLines = 1,
-                        modifier = Modifier
-                            .basicMarquee()
-                    )
-
-                    Text(
-                        text = "Daily Goal: ${goalMl.toInt()}ml",
-                        style = MaterialTheme.typography.bodyMedium,
+                    drawLine(
+                        color = if (angleInDegrees <= 135f + 270f * progress) primaryColor else gaugeColor.copy(alpha = 0.5f),
+                        start = start,
+                        end = end,
+                        strokeWidth = 2.dp.toPx(),
+                        cap = StrokeCap.Round
                     )
                 }
             }
+
+            // Water Drop (Centered)
+            Box(
+                modifier = Modifier
+                    .size(100.dp, 120.dp)
+                    .align(Alignment.Center)
+                    .clip(WaterDropShape())
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f))
+            ) {
+                WaveAnimation(
+                    modifier = Modifier.fillMaxSize(),
+                    progress = progress,
+                    color = primaryColor,
+                    amplitude = 15f,
+                    frequency = 0.02f
+                )
+            }
+
+            // Intake Text (Below Water Drop)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+            ) {
+                Text(
+                    text = totalMl.toInt().toString(),
+                    style = MaterialTheme.typography.displaySmall.copy(
+                        fontWeight = FontWeight.Black
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Text(
+                    text = "/ ${goalMl.toInt()} ml",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
+    }
+}
+
+class WaterDropShape : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density
+    ): Outline {
+
+        val path = Path().apply {
+            val cx = size.width / 2f
+
+            // bikin lebih besar & proporsional
+            val radius = size.width * 0.32f
+            val cy = size.height * 0.65f
+
+            val leftX = cx - radius
+            val rightX = cx + radius
+            val topY = cy - radius * 1.6f
+
+            // mulai dari kiri bawah
+            moveTo(leftX, cy)
+
+            // sisi kiri → atas (smooth)
+            cubicTo(
+                leftX, cy - radius * 0.5f,
+                cx - radius * 0.3f, topY,
+                cx, topY
+            )
+
+            // sisi kanan → bawah (smooth)
+            cubicTo(
+                cx + radius * 0.3f, topY,
+                rightX, cy - radius * 0.5f,
+                rightX, cy
+            )
+
+            // setengah lingkaran bawah
+            arcTo(
+                rect = Rect(
+                    cx - radius,
+                    cy - radius,
+                    cx + radius,
+                    cy + radius
+                ),
+                startAngleDegrees = 0f,
+                sweepAngleDegrees = 180f,
+                forceMoveTo = false
+            )
+
+            close()
+        }
+
+        return Outline.Generic(path)
     }
 }
 
@@ -322,26 +424,38 @@ private fun QuickRefillSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .padding(horizontal = 24.dp)
+            .padding(top = 8.dp, bottom = 16.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Quick Refill",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(4.dp, 16.dp)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Quick Refill",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
 
             IconButton(
-                onClick = onCustomQuickRefillClicked
+                onClick = onCustomQuickRefillClicked,
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                    contentDescription = null
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -350,7 +464,7 @@ private fun QuickRefillSection(
         
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             bottles.forEach { bottle ->
                 QuickRefillButton(
@@ -372,13 +486,22 @@ private fun QuickRefillButton(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
+    val containerColor = if (bottle != null) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.24f)
+    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f)
+    
+    val borderColor = if (bottle != null) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+
     Card(
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(28.dp),
         onClick = onClick,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = containerColor
         ),
-        modifier = modifier.height(112.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = modifier
+            .height(120.dp)
+            .border(1.5.dp, borderColor, RoundedCornerShape(28.dp))
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -386,32 +509,60 @@ private fun QuickRefillButton(
             verticalArrangement = Arrangement.Center
         ) {
             if (bottle != null) {
-                Icon(
-                    painter = painterResource(id = DrinkBottleIcon.fromString(bottle.icon).resId),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant, // logic slightly simplified
-                    modifier = Modifier.size(20.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = DrinkBottleIcon.fromString(bottle.icon).resId),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        text = bottle.volumeMl.toInt().toString(),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Black
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = "ml",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 3.dp)
+                    )
+                }
             } else {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = bottle?.volumeMl?.toInt()?.toString() ?: "Empty",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold
-            )
-            if (bottle != null) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .drawBehindDashedBorder(MaterialTheme.colorScheme.outlineVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
                 Text(
-                    text = "ml",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Empty",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
@@ -425,15 +576,24 @@ private fun LazyListScope.drinkHistorySection(
     onDelete: (HydrationLogWithBottle) -> Unit
 ) {
     item {
-        Text(
-            text = "Drink History",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp)
-        )
+                .padding(24.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(4.dp, 16.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Drink History",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+        }
     }
 
     if (nextReminderTime != null) {
@@ -755,4 +915,16 @@ private fun DrinkHistoryItem(
             }
         }
     }
+}
+
+private fun Modifier.drawBehindDashedBorder(color: Color) = this.drawBehind {
+    val stroke = Stroke(
+        width = 2.dp.toPx(),
+        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+    )
+    drawRoundRect(
+        color = color,
+        style = stroke,
+        cornerRadius = CornerRadius(24.dp.toPx())
+    )
 }
