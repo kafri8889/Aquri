@@ -18,6 +18,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,12 +32,40 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import com.anafthdev.aquri.ui.screens.statistic.BeverageBreakdownData
 import com.anafthdev.aquri.ui.theme.AquriTheme
+import com.patrykandpatrick.vico.compose.common.Fill
+import com.patrykandpatrick.vico.compose.pie.PieChart
+import com.patrykandpatrick.vico.compose.pie.PieChartHost
+import com.patrykandpatrick.vico.compose.pie.data.PieChartModelProducer
+import com.patrykandpatrick.vico.compose.pie.data.PieValueFormatter
+import com.patrykandpatrick.vico.compose.pie.data.pieSeries
+import com.patrykandpatrick.vico.compose.pie.rememberPieChart
 
 @Composable
 fun BeverageTypeCard(
     beverageDistribution: List<BeverageBreakdownData>,
     modifier: Modifier = Modifier
 ) {
+
+    val yData = remember { mutableStateListOf<Float>().apply { add(0f) } }
+    val chartColor = remember { mutableStateListOf<Color>().apply { add(Color.LightGray) } }
+    val modelProducer = remember { PieChartModelProducer() }
+
+    LaunchedEffect(beverageDistribution) {
+        yData.clear()
+        chartColor.clear()
+
+        beverageDistribution.forEach {
+            yData.add(it.totalMl)
+            chartColor.add(Color(it.hexColor.toColorInt()))
+        }
+
+        modelProducer.runTransaction {
+            pieSeries {
+                series(yData)
+            }
+        }
+    }
+
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
@@ -61,19 +92,21 @@ fun BeverageTypeCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                // Pie Chart Placeholder (left side)
-                Box(
+                PieChartHost(
+                    modelProducer = modelProducer,
+                    chart = rememberPieChart(
+                        valueFormatter = PieValueFormatter { _, value, _ -> "" },
+                        sliceProvider = PieChart.SliceProvider.series(
+                            chartColor.mapIndexed { index, color ->
+                                PieChart.Slice(
+                                    fill = Fill(color)
+                                )
+                            }
+                        ),
+                    ),
                     modifier = Modifier
-                        .size(100.dp)
-                        .padding(8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Pie Chart",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.Gray
-                    )
-                }
+                        .size(128.dp)
+                )
 
                 // Legend (right side)
                 Column(

@@ -2,9 +2,11 @@ package com.anafthdev.aquri.ui.screens.statistic
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.anafthdev.aquri.data.Constant
 import com.anafthdev.aquri.data.model.entity.DailySummaryEntity
 import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
 import com.anafthdev.aquri.data.model.entity.HydrationLogWithBottle
+import com.anafthdev.aquri.data.model.entity.UserEntity
 import com.anafthdev.aquri.data.repository.HydrationRepository
 import com.anafthdev.aquri.data.repository.UserRepository
 import com.anafthdev.aquri.utils.DateTimeUtils
@@ -41,6 +43,12 @@ class StatisticViewModel @Inject constructor(
 
     private val _chartData = MutableStateFlow<List<Float>>(emptyList())
     val chartData: StateFlow<List<Float>> = _chartData.asStateFlow()
+
+    private val _goalData = MutableStateFlow<List<Float>>(emptyList())
+    val goalData: StateFlow<List<Float>> = _goalData.asStateFlow()
+
+    private val _targetGoal = MutableStateFlow(0f)
+    val targetGoal: StateFlow<Float> = _targetGoal.asStateFlow()
 
     private val _peakActivityHour = MutableStateFlow<Int?>(null)
     val peakActivityHour: StateFlow<Int?> = _peakActivityHour.asStateFlow()
@@ -135,9 +143,13 @@ class StatisticViewModel @Inject constructor(
             val logs = args[3] as List<HydrationLogWithBottle>
             val allLogs = args[4] as List<HydrationLogWithBottle>
             val types = args[5] as List<DrinkTypeEntity>
+            val user = user.value
 
             val data = prepareData(filter, date, summaries, logs)
             _chartData.value = data
+            
+            _goalData.value = calculateGoalYChartData(filter, date, summaries, user)
+            _targetGoal.value = calculateTargetGoal(filter, date, summaries, user)
             
             _detailedBeverageDistribution.value = calculateDetailedBeverageBreakdown(filter, date, allLogs, types)
 
@@ -329,6 +341,125 @@ class StatisticViewModel @Inject constructor(
         val calendar = Calendar.getInstance().apply { timeInMillis = summaryDate }
         val dayName = calendar.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, java.util.Locale.getDefault()) ?: ""
         return DaySummaryData(dayName, totalMl)
+    }
+
+    /**
+     * Mengembalikan target goal berdasarkan filter untuk penggunaan chart
+     */
+    private fun calculateGoalYChartData(
+        filter: StatisticFilter,
+        date: Long,
+        summaries: List<DailySummaryEntity>,
+        user: UserEntity?
+    ): List<Float> {
+        val defaultGoal = user?.dailyGoalMl ?: 2500f
+        
+        return when (filter) {
+            StatisticFilter.Daily -> List(24) { defaultGoal }
+            StatisticFilter.Weekly -> {
+                val (start, _) = DateTimeUtils.getWeekRange(date)
+                val cal = Calendar.getInstance().apply { timeInMillis = start }
+                List(7) {
+                    val currentDay = cal.timeInMillis
+                    val summary = summaries.find { DateTimeUtils.isSameDay(it.summaryDate, currentDay) }
+                    val goal = summary?.goalMl ?: defaultGoal
+                    cal.add(Calendar.DAY_OF_YEAR, 1)
+                    goal
+                }
+            }
+            StatisticFilter.Monthly -> {
+                val cal = Calendar.getInstance().apply { 
+                    timeInMillis = date
+                    set(Calendar.DAY_OF_MONTH, 1)
+                }
+                val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                List(maxDay) {
+                    val currentDay = cal.timeInMillis
+                    val summary = summaries.find { DateTimeUtils.isSameDay(it.summaryDate, currentDay) }
+                    val goal = summary?.goalMl ?: defaultGoal
+                    cal.add(Calendar.DAY_OF_YEAR, 1)
+                    goal
+                }
+            }
+            StatisticFilter.Yearly -> {
+                val cal = Calendar.getInstance().apply { timeInMillis = date }
+                val currentYear = cal.get(Calendar.YEAR)
+                List(12) { month ->
+                    val monthCal = Calendar.getInstance().apply {
+                        set(Calendar.YEAR, currentYear)
+                        set(Calendar.MONTH, month)
+                        set(Calendar.DAY_OF_MONTH, 1)
+                    }
+                    val daysInMonth = monthCal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                    var monthGoal = 0f
+                    repeat(daysInMonth) {
+                        val dayTs = monthCal.timeInMillis
+                        monthGoal += summaries.find { DateTimeUtils.isSameDay(it.summaryDate, dayTs) }?.goalMl ?: defaultGoal
+                        monthCal.add(Calendar.DAY_OF_YEAR, 1)
+                    }
+                    monthGoal
+                }
+            }
+        }
+    }
+
+    private fun calculateTargetGoal(
+        filter: StatisticFilter,
+        date: Long,
+        summaries: List<DailySummaryEntity>,
+        user: UserEntity?
+    ): Float {
+        val defaultGoal = user?.dailyGoalMl ?: Constant.MIN_DAILY_GOAL
+
+        return when (filter) {
+            StatisticFilter.Daily -> {
+                summaries.find { DateTimeUtils.isSameDay(it.summaryDate, date) }?.goalMl ?: defaultGoal
+            }
+            StatisticFilter.Weekly -> {
+                val (start, _) = DateTimeUtils.getWeekRange(date)
+                val cal = Calendar.getInstance().apply { timeInMillis = start }
+                var total = 0f
+                repeat(7) {
+                    val dayTs = cal.timeInMillis
+                    total += summaries.find { DateTimeUtils.isSameDay(it.summaryDate, dayTs) }?.goalMl ?: defaultGoal
+                    cal.add(Calendar.DAY_OF_YEAR, 1)
+                }
+                total
+            }
+            StatisticFilter.Monthly -> {
+                val cal = Calendar.getInstance().apply { 
+                    timeInMillis = date
+                    set(Calendar.DAY_OF_MONTH, 1)
+                }
+                val maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                var total = 0f
+                repeat(maxDay) {
+                    val dayTs = cal.timeInMillis
+                    total += summaries.find { DateTimeUtils.isSameDay(it.summaryDate, dayTs) }?.goalMl ?: defaultGoal
+                    cal.add(Calendar.DAY_OF_YEAR, 1)
+                }
+                total
+            }
+            StatisticFilter.Yearly -> {
+                val cal = Calendar.getInstance().apply { timeInMillis = date }
+                val currentYear = cal.get(Calendar.YEAR)
+                var total = 0f
+                repeat(12) { month ->
+                    val monthCal = Calendar.getInstance().apply {
+                        set(Calendar.YEAR, currentYear)
+                        set(Calendar.MONTH, month)
+                        set(Calendar.DAY_OF_MONTH, 1)
+                    }
+                    val daysInMonth = monthCal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                    repeat(daysInMonth) {
+                        val dayTs = monthCal.timeInMillis
+                        total += summaries.find { DateTimeUtils.isSameDay(it.summaryDate, dayTs) }?.goalMl ?: defaultGoal
+                        monthCal.add(Calendar.DAY_OF_YEAR, 1)
+                    }
+                }
+                total
+            }
+        }
     }
 
     private fun prepareData(
