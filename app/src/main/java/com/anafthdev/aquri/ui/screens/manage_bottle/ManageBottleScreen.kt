@@ -611,10 +611,10 @@ fun DrinkTypeListItem(
     Card(
         shape = RoundedCornerShape(32.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(74.dp)
-            .clickable { onClick() }
+            .height(56.dp)
     ) {
         Row(
             modifier = Modifier
@@ -626,8 +626,8 @@ fun DrinkTypeListItem(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
-                        .background(Color(android.graphics.Color.parseColor(drinkType.hexColor)), CircleShape)
+                        .size(24.dp)
+                        .background(Color(drinkType.hexColor.toColorInt()), CircleShape)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {

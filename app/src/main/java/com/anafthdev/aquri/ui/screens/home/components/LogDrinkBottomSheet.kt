@@ -94,13 +94,15 @@ fun LogDrinkBottomSheetContent(
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp)
+            .padding(vertical = 24.dp)
             .padding(bottom = 32.dp)
     ) {
         Text(
             text = if (existingLog != null) "Edit Log" else "Add Log",
             style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .padding(horizontal = 24.dp)
         )
         
         Spacer(modifier = Modifier.height(24.dp))
@@ -110,12 +112,16 @@ fun LogDrinkBottomSheetContent(
             text = "SELECT BOTTLE",
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .padding(horizontal = 24.dp)
         )
-        Spacer(modifier = Modifier.height(12.dp))
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(end = 24.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 24.dp)
         ) {
             items(bottles) { bottle ->
                 val isSelected = selectedBottle?.id == bottle.id
@@ -132,7 +138,7 @@ fun LogDrinkBottomSheetContent(
                         verticalArrangement = Arrangement.Center,
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(12.dp)
+                            .padding(8.dp)
                     ) {
                         Icon(
                             painter = painterResource(id = DrinkBottleIcon.fromString(bottle.icon).resId),
@@ -165,12 +171,16 @@ fun LogDrinkBottomSheetContent(
             text = "DRINK TYPE",
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .padding(horizontal = 24.dp)
         )
-        Spacer(modifier = Modifier.height(12.dp))
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(end = 24.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 24.dp)
         ) {
             items(drinkTypes) { type ->
                 val isSelected = selectedDrinkType?.id == type.id
@@ -211,17 +221,22 @@ fun LogDrinkBottomSheetContent(
             text = "TIME",
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .padding(horizontal = 24.dp)
         )
-        Spacer(modifier = Modifier.height(12.dp))
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                 .clickable { showTimePicker = true }
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
+                .padding(horizontal = 24.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.AccessTime,
@@ -245,9 +260,12 @@ fun LogDrinkBottomSheetContent(
                 val type = selectedDrinkType ?: return@Button
                 onSave(bottle, type, logTime)
             },
-            modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(16.dp),
-            enabled = selectedBottle != null && selectedDrinkType != null
+            enabled = selectedBottle != null && selectedDrinkType != null,
+            modifier = Modifier
+                .padding(horizontal = 24.dp)
+                .fillMaxWidth()
+                .height(56.dp)
         ) {
             Text(
                 text = if (existingLog != null) "Update Log" else "Save Log",
