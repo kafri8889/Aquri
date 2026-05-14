@@ -3,15 +3,14 @@ package com.anafthdev.aquri.ui.screens.statistic.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -314,33 +313,18 @@ fun MonthlyMainBarChart(
     CoreChart(
         modifier = modifier
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
+        Column(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = "Monthly Intake",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                Text(
-                    text = "Visualize your hydration trends",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = AquriTheme.colorScheme.lightText
-                )
-            }
-
-            AquriSelector(
-                option1 = AquriSelectorOption("Bar", Icons.Default.BarChart),
-                option2 = AquriSelectorOption("Line", Icons.Default.ShowChart),
-                selectedOption = selectedChartType,
-                onOptionSelected = { selectedChartType = it }
+            Text(
+                text = "Monthly Intake",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Text(
+                text = "Visualize your hydration trends",
+                style = MaterialTheme.typography.bodySmall,
+                color = AquriTheme.colorScheme.lightText
             )
         }
 
@@ -395,6 +379,13 @@ fun MonthlyMainBarChart(
                     .height(216.dp)
             )
         }
+
+        AquriSelector(
+            option1 = AquriSelectorOption("Bar", Icons.Default.BarChart),
+            option2 = AquriSelectorOption("Line", Icons.AutoMirrored.Filled.ShowChart),
+            selectedOption = selectedChartType,
+            onOptionSelected = { selectedChartType = it }
+        )
     }
 }
 

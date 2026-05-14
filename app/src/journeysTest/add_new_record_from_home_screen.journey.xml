@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<journey name="Add new record from home screen">
+    <description xml:space="preserve"></description>
+    <actions xml:space="preserve">
+        <action>Add new drink record in home screen through tapping a drink bottle in quick refill section.</action>
+        <action>The bottom sheet should be appear, select other bottle and input random amount, and then click save button.</action>
+        <action>When bottom sheet dismissed, verify that drink progress is increased, also scroll to bottom, and new drink record item should be appear.</action>
+    </actions>
+</journey>

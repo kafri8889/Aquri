@@ -59,8 +59,15 @@ fun BeverageTypeCard(
             chartColor.add(Color(it.hexColor.toColorInt()))
         }
 
+        // Library bug, data gak boleh kosong
+        if (yData.isEmpty()) {
+            yData.add(100f)
+            chartColor.add(Color.LightGray)
+        }
+
         // Library bug, pie chart ilang kalo datanya cuma 1
         if (yData.size == 1) yData.add(0.001f)
+        if (chartColor.size == 1) chartColor.add(Color.LightGray)
 
         modelProducer.runTransaction {
             pieSeries {

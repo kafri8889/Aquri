@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.anafthdev.aquri.ui.theme.AquriTheme
 
@@ -79,7 +80,7 @@ fun AquriSelector(
                 .width(100.dp)
                 .height(44.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.primaryContainer)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
@@ -96,7 +97,9 @@ fun AquriSelector(
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .offset(x = indicatorOffset)
+                    .offset {
+                        IntOffset(x = indicatorOffset.toPx().toInt(), y = 0)
+                    }
                     .align(Alignment.CenterStart)
                     .size(40.dp, 32.dp)
                     .clip(RoundedCornerShape(12.dp))
