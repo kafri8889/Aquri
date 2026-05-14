@@ -2,6 +2,7 @@ package com.anafthdev.aquri.ui.screens.statistic
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.anafthdev.aquri.AquriApplication
 import com.anafthdev.aquri.data.Constant
 import com.anafthdev.aquri.data.model.entity.DailySummaryEntity
 import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
@@ -10,7 +11,6 @@ import com.anafthdev.aquri.data.model.entity.UserEntity
 import com.anafthdev.aquri.data.repository.HydrationRepository
 import com.anafthdev.aquri.data.repository.UserRepository
 import com.anafthdev.aquri.utils.DateTimeUtils
-import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,8 +22,11 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.stateIn
-import timber.log.Timber
+import java.time.Month
+import java.time.format.TextStyle
+import java.time.temporal.WeekFields
 import java.util.Calendar
+import java.util.Locale
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -39,10 +42,11 @@ class StatisticViewModel @Inject constructor(
     private val _selectedDate = MutableStateFlow(System.currentTimeMillis())
     val selectedDate: StateFlow<Long> = _selectedDate.asStateFlow()
 
-    val mainChartModelProducer = CartesianChartModelProducer()
+    private val _chartYData = MutableStateFlow<List<Float>>(emptyList())
+    val chartYData: StateFlow<List<Float>> = _chartYData.asStateFlow()
 
-    private val _chartData = MutableStateFlow<List<Float>>(emptyList())
-    val chartData: StateFlow<List<Float>> = _chartData.asStateFlow()
+    private val _chartXData = MutableStateFlow<List<String>>(emptyList())
+    val chartXData: StateFlow<List<String>> = _chartXData.asStateFlow()
 
     private val _goalData = MutableStateFlow<List<Float>>(emptyList())
     val goalData: StateFlow<List<Float>> = _goalData.asStateFlow()
@@ -145,9 +149,12 @@ class StatisticViewModel @Inject constructor(
             val types = args[5] as List<DrinkTypeEntity>
             val user = user.value
 
-            val data = prepareData(filter, date, summaries, logs)
-            _chartData.value = data
-            
+            val locale = AquriApplication.instance?.resources?.configuration?.locales?.get(0) ?: Locale.getDefault()
+            val chartYData = calculateChartYData(filter, date, summaries, logs, locale)
+
+            _chartYData.value = chartYData
+            _chartXData.value = calculateChartXData(filter, date, locale)
+
             _goalData.value = calculateGoalYChartData(filter, date, summaries, user)
             _targetGoal.value = calculateTargetGoal(filter, date, summaries, user)
             
@@ -162,7 +169,7 @@ class StatisticViewModel @Inject constructor(
 
                 _weeklyBestDay.value = bestDay
                 _weeklyWorstDay.value = if (bestDay == worstDay) null else worstDay
-                _weeklyComparison.value = calculateWeeklyComparison(date, summaries)
+                _weeklyComparison.value = calculateWeeklyComparison(date, summaries, locale)
             } else {
                 _weeklyDailyGoals.value = emptyList()
                 _weeklyBestDay.value = null
@@ -171,7 +178,7 @@ class StatisticViewModel @Inject constructor(
             }
 
             if (filter == StatisticFilter.Daily) {
-                _peakActivityHour.value = data.indexOfMax()?.takeIf { data[it] > 0 }
+                _peakActivityHour.value = chartYData.indexOfMax()?.takeIf { chartYData[it] > 0 }
                 _logCount.value = logs.size
                 _topBottleName.value = logs
                     .groupBy { it.log.bottleName ?: it.bottle?.name ?: "Unknown" }
@@ -255,8 +262,9 @@ class StatisticViewModel @Inject constructor(
     ): List<DailyGoalProgress> {
         val (start, _) = DateTimeUtils.getWeekRange(date)
         val calendar = Calendar.getInstance().apply { timeInMillis = start }
+        val locale = AquriApplication.instance?.globalResources?.configuration?.locales?.get(0) ?: Locale.getDefault()
         
-        val dayNames = listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
+        val dayNames = getWeekNames(locale)
         
         return List(7) { i ->
             val currentDay = calendar.timeInMillis
@@ -278,20 +286,17 @@ class StatisticViewModel @Inject constructor(
     private fun getWeekSummaries(date: Long, summaries: List<DailySummaryEntity>): List<DailySummaryEntity> {
         val (start, end) = DateTimeUtils.getWeekRange(date)
 
-        Timber.i("makse star: $start")
-        Timber.i("makse en: $end")
-
         return summaries.filter { it.summaryDate in start..end }
     }
 
-    private fun calculateWeeklyComparison(date: Long, summaries: List<DailySummaryEntity>): WeeklyComparisonData {
-        val (thisWeekStart, thisWeekEnd) = DateTimeUtils.getWeekRange(date)
+    private fun calculateWeeklyComparison(date: Long, summaries: List<DailySummaryEntity>, locale: Locale): WeeklyComparisonData {
+        val (thisWeekStart, thisWeekEnd) = DateTimeUtils.getWeekRange(date, locale)
         val thisWeekSummaries = summaries.filter { it.summaryDate in thisWeekStart..thisWeekEnd }
         val thisWeekTotal = thisWeekSummaries.sumOf { it.totalMl.toDouble() }.toFloat()
         val thisWeekGoal = thisWeekSummaries.sumOf { it.goalMl.toDouble() }.toFloat().takeIf { it > 0 } ?: (2500f * 7) // fallback to default
         
         // Last Week
-        val (lastWeekStart, lastWeekEnd) = DateTimeUtils.getWeekRange(thisWeekStart - 24 * 60 * 60 * 1000)
+        val (lastWeekStart, lastWeekEnd) = DateTimeUtils.getWeekRange(thisWeekStart - 24 * 60 * 60 * 1000, locale)
         val lastWeekSummaries = summaries.filter { it.summaryDate in lastWeekStart..lastWeekEnd }
         val lastWeekTotal = lastWeekSummaries.sumOf { it.totalMl.toDouble() }.toFloat()
         val lastWeekGoal = lastWeekSummaries.sumOf { it.goalMl.toDouble() }.toFloat().takeIf { it > 0 } ?: (2500f * 7)
@@ -462,29 +467,50 @@ class StatisticViewModel @Inject constructor(
         }
     }
 
-    private fun prepareData(
+    private fun calculateChartXData(
+        filter: StatisticFilter,
+        date: Long,
+        locale: Locale
+    ): List<String> {
+        return when (filter) {
+            StatisticFilter.Daily -> {
+                (0..23).toList().map { it.toString() }
+            }
+            StatisticFilter.Weekly -> getWeekNames(locale)
+            StatisticFilter.Monthly -> {
+                val calendar = Calendar.getInstance().apply { timeInMillis = date }
+                val start = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
+                val end = calendar.getActualMinimum(Calendar.DAY_OF_MONTH)
+
+                (start..end).toList().map { it.toString() }
+            }
+            StatisticFilter.Yearly -> getMonthNames(locale)
+        }
+    }
+
+    private fun calculateChartYData(
         filter: StatisticFilter,
         date: Long,
         summaries: List<DailySummaryEntity>,
-        logs: List<HydrationLogWithBottle>
+        logs: List<HydrationLogWithBottle>,
+        locale: Locale
     ): List<Float> {
         val calendar = Calendar.getInstance().apply { timeInMillis = date }
-        
+
         return when (filter) {
             StatisticFilter.Daily -> {
                 // Hourly data (0-23 hours)
-                val hourlyData = FloatArray(24) { 0f }
+                val hourlyData = FloatArray(24)
                 logs.forEach { logWithBottle ->
                     val logCal = Calendar.getInstance().apply { timeInMillis = logWithBottle.log.loggedAt }
                     val hour = logCal.get(Calendar.HOUR_OF_DAY)
-                    if (hour in 0..23) {
-                        hourlyData[hour] += logWithBottle.log.amountMl
-                    }
+                    hourlyData[hour] += logWithBottle.log.amountMl
                 }
+
                 hourlyData.toList()
             }
             StatisticFilter.Weekly -> {
-                val (start, _) = DateTimeUtils.getWeekRange(date)
+                val (start, _) = DateTimeUtils.getWeekRange(date, locale)
                 val cal = Calendar.getInstance().apply { timeInMillis = start }
                 val weekData = mutableListOf<Float>()
                 repeat(7) {
@@ -558,6 +584,25 @@ class StatisticViewModel @Inject constructor(
             StatisticFilter.Yearly -> calendar.add(Calendar.YEAR, -1)
         }
         _selectedDate.value = calendar.timeInMillis
+    }
+
+    companion object {
+
+        fun getWeekNames(locale: Locale): List<String> {
+            val firstDay = WeekFields.of(locale).firstDayOfWeek
+
+            return (0..6).map { i ->
+                val day = firstDay.plus(i.toLong())
+                day.getDisplayName(TextStyle.SHORT, locale)
+            }
+        }
+
+        fun getMonthNames(locale: Locale): List<String> {
+            return Month.entries.map {
+                it.getDisplayName(TextStyle.SHORT, locale)
+            }
+        }
+
     }
 }
 

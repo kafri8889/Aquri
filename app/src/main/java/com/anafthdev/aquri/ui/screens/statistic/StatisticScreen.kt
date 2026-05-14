@@ -30,7 +30,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,14 +40,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,26 +50,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.anafthdev.aquri.ui.screens.statistic.components.BestWorstDaySection
 import com.anafthdev.aquri.ui.screens.statistic.components.BeverageTypeCard
+import com.anafthdev.aquri.ui.screens.statistic.components.DailyMainBarChart
 import com.anafthdev.aquri.ui.screens.statistic.components.DailyStatisticsSection
 import com.anafthdev.aquri.ui.screens.statistic.components.HistoryComparisonCard
+import com.anafthdev.aquri.ui.screens.statistic.components.MonthlyMainBarChart
 import com.anafthdev.aquri.ui.screens.statistic.components.StatisticFilterChips
 import com.anafthdev.aquri.ui.screens.statistic.components.StatisticPeriodSelector
 import com.anafthdev.aquri.ui.screens.statistic.components.WeeklyDailyGoalsCard
-import com.anafthdev.aquri.ui.screens.statistic.components.rememberMarker
+import com.anafthdev.aquri.ui.screens.statistic.components.WeeklyMainBarChart
 import com.anafthdev.aquri.ui.theme.AquriTheme
-import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
-import com.patrykandpatrick.vico.compose.cartesian.axis.HorizontalAxis
-import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
-import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
-import com.patrykandpatrick.vico.compose.cartesian.data.CartesianValueFormatter
-import com.patrykandpatrick.vico.compose.cartesian.data.columnSeries
-import com.patrykandpatrick.vico.compose.cartesian.layer.CartesianLayerPadding
-import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
-import com.patrykandpatrick.vico.compose.cartesian.marker.ColumnCartesianLayerMarkerTarget
-import com.patrykandpatrick.vico.compose.cartesian.marker.DefaultCartesianMarker
-import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
-import com.patrykandpatrick.vico.compose.common.data.ExtraStore
-import kotlinx.coroutines.runBlocking
 
 @Composable
 fun StatisticScreen(
@@ -85,7 +67,8 @@ fun StatisticScreen(
 ) {
     val selectedFilter by viewModel.selectedFilter.collectAsStateWithLifecycle()
     val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
-    val chartYData by viewModel.chartData.collectAsStateWithLifecycle()
+    val chartYData by viewModel.chartYData.collectAsStateWithLifecycle()
+    val chartXData by viewModel.chartXData.collectAsStateWithLifecycle()
     val peakActivityHour by viewModel.peakActivityHour.collectAsStateWithLifecycle()
     val logCount by viewModel.logCount.collectAsStateWithLifecycle()
     val topBottleName by viewModel.topBottleName.collectAsStateWithLifecycle()
@@ -100,6 +83,7 @@ fun StatisticScreen(
         selectedFilter = selectedFilter,
         selectedDate = selectedDate,
         mainChartYData = chartYData,
+        mainChartXData = chartXData,
         peakActivityHour = peakActivityHour,
         logCount = logCount,
         topBottleName = topBottleName,
@@ -124,6 +108,7 @@ fun StatisticScreenContent(
     selectedFilter: StatisticFilter,
     selectedDate: Long,
     mainChartYData: List<Float>,
+    mainChartXData: List<String>,
     peakActivityHour: Int?,
     logCount: Int,
     topBottleName: String?,
@@ -285,6 +270,7 @@ fun StatisticScreenContent(
                     item {
                         DailyMainBarChart(
                             chartYData = mainChartYData,
+                            chartXData = mainChartXData,
                             peakActivityHour = peakActivityHour,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -300,9 +286,9 @@ fun StatisticScreenContent(
 
                 if (selectedFilter == StatisticFilter.Weekly) {
                     item {
-                        DailyMainBarChart( // todo implement weekly chart
+                        WeeklyMainBarChart(
                             chartYData = mainChartYData,
-                            peakActivityHour = peakActivityHour,
+                            chartXData = mainChartXData,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp)
@@ -346,6 +332,23 @@ fun StatisticScreenContent(
                     item {
                         HistoryComparisonCard(
                             data = weeklyComparison,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .animateItem()
+                        )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+
+                if (selectedFilter == StatisticFilter.Monthly) {
+                    item {
+                        MonthlyMainBarChart(
+                            chartYData = mainChartYData,
+                            chartXData = mainChartXData,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp)
@@ -421,134 +424,6 @@ private fun DailyStatCard(
     }
 }
 
-@Composable
-private fun DailyMainBarChart(
-    chartYData: List<Float>,
-    peakActivityHour: Int?,
-    modifier: Modifier = Modifier
-) {
-
-    val modelProducer = remember { CartesianChartModelProducer() }
-
-    LaunchedEffect(chartYData) {
-        modelProducer.runTransaction {
-            columnSeries {
-                series(chartYData)
-            }
-        }
-    }
-
-    if (LocalInspectionMode.current) {
-        runBlocking {
-            modelProducer.runTransaction {
-                columnSeries {
-                    series(chartYData)
-                }
-            }
-        }
-    }
-
-    val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    val is24Hour = android.text.format.DateFormat.is24HourFormat(context)
-
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 1.dp
-        )
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .padding(12.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .align(Alignment.Start)
-            ) {
-                Text(
-                    text = "Hourly Intake",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold
-                )
-
-                val hourStr = remember(configuration, peakActivityHour, is24Hour) {
-                    if (peakActivityHour == null) return@remember "-"
-
-                    val locale = configuration.locales[0]
-
-                    val formatHour: (Int) -> String = { h ->
-                        if (is24Hour) {
-                            String.format(locale, "%02d:00", h)
-                        } else {
-                            when {
-                                h == 0 -> "12 AM"
-                                h < 12 -> "$h AM"
-                                h == 12 -> "12 PM"
-                                else -> "${h - 12} PM"
-                            }
-                        }
-                    }
-
-                    val start = formatHour(peakActivityHour)
-                    val next = (peakActivityHour + 1) % 24
-                    val end = formatHour(next)
-                    "$start - $end"
-                }
-
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = AquriTheme.colorScheme.lightText
-                            ).toSpanStyle()
-                        ) {
-                            append("Peak activity at")
-                            append(" ")
-                        }
-
-                        withStyle(
-                            style = MaterialTheme.typography.titleSmall.copy(
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold
-                            ).toSpanStyle()
-                        ) {
-                            append(hourStr)
-                        }
-                    }
-                )
-            }
-
-            CartesianChartHost(
-                modelProducer = modelProducer,
-                chart = rememberCartesianChart(
-                    rememberColumnCartesianLayer(),
-                    startAxis = VerticalAxis.rememberStart(
-                        valueFormatter = StartAxisValueFormatter
-                    ),
-                    bottomAxis = HorizontalAxis.rememberBottom(
-                        guideline = null
-                    ),
-                    layerPadding = {
-                        CartesianLayerPadding(
-                            scalableStart = 8.dp,
-                            scalableEnd = 8.dp
-                        )
-                    },
-                    marker = rememberMarker(WaterVolumeValueFormatter)
-                ),
-                modifier = Modifier
-                    .height(216.dp)
-            )
-        }
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
 private fun StatisticScreenPreview() {
@@ -556,6 +431,7 @@ private fun StatisticScreenPreview() {
         StatisticScreenContent(
             selectedFilter = StatisticFilter.Weekly,
             mainChartYData = listOf(5f, 6f, 5f, 2f, 11f, 8f, 5f),
+            mainChartXData = listOf("A", "B", "C", "D", "E", "F", "G"),
             peakActivityHour = 8,
             logCount = 7,
             topBottleName = "Glass Cup",
@@ -586,25 +462,3 @@ private fun StatisticScreenPreview() {
         )
     }
 }
-
-private val BottomAxisLabelKey = ExtraStore.Key<List<String>>()
-
-private val StartAxisValueFormatter = CartesianValueFormatter { _, value, _ ->
-    "${value.toInt()}ml"
-}
-
-private val BottomAxisValueFormatter = CartesianValueFormatter { context, x, _ ->
-    context.model.extraStore[BottomAxisLabelKey][x.toInt()]
-}
-
-private val WaterVolumeValueFormatter =
-    DefaultCartesianMarker.ValueFormatter { _, targets ->
-        val column = (targets[0] as ColumnCartesianLayerMarkerTarget).columns[0]
-        buildAnnotatedString {
-            withStyle(SpanStyle(column.color)) {
-                val value = column.entry.y.toInt().toString()
-                append(value)
-                append("ml")
-            }
-        }
-    }

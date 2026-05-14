@@ -1,9 +1,10 @@
 package com.anafthdev.aquri.utils
 
-import java.time.DayOfWeek
 import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
+import java.time.temporal.WeekFields
+import java.util.Locale
 
 /**
  * Utility class for date and time calculations.
@@ -28,21 +29,26 @@ object DateTimeUtils {
      * Returns the start and end midnight timestamps for the week containing the given timestamp.
      * The week is assumed to start on Monday and end on Sunday.
      */
-    fun getWeekRange(timestamp: Long): Pair<Long, Long> {
+    fun getWeekRange(timestamp: Long, locale: Locale = Locale.getDefault()): Pair<Long, Long> {
+        val firstDay = WeekFields.of(locale).firstDayOfWeek
+
         val date = Instant.ofEpochMilli(timestamp)
             .atZone(zoneId)
             .toLocalDate()
-        
-        val start = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+
+        val startDate = date.with(TemporalAdjusters.previousOrSame(firstDay))
+        val endDate = startDate.plusDays(6)
+
+        val start = startDate
             .atStartOfDay(zoneId)
             .toInstant()
             .toEpochMilli()
-            
-        val end = date.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
+
+        val end = endDate
             .atStartOfDay(zoneId)
             .toInstant()
             .toEpochMilli()
-            
+
         return start to end
     }
 
