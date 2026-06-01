@@ -58,3 +58,10 @@ data class ChallengePreview(
     val description: String,
     val rewardText: String
 )
+
+data class LevelReward(
+    val level: Int,
+    val title: String,
+    val iconResId: Int? = null,
+    val isUnlocked: Boolean = false
+)

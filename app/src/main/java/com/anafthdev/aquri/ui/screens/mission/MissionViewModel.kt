@@ -4,8 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.anafthdev.aquri.core.mission.MissionService
 import com.anafthdev.aquri.core.mission.model.ChallengePreview
+import com.anafthdev.aquri.core.mission.model.LevelReward
 import com.anafthdev.aquri.core.mission.model.MissionCardModel
 import com.anafthdev.aquri.core.mission.model.MissionStatus
+import com.anafthdev.aquri.data.model.entity.BadgeEntity
+import com.anafthdev.aquri.data.model.enum.BadgeCategory
+import com.anafthdev.aquri.data.model.enum.Rarity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,7 +56,17 @@ class MissionViewModel @Inject constructor(
                         dailyMissions = dashboard.dailyMissions,
                         weeklyMissions = dashboard.weeklyMissions,
                         oneTimeMissions = dashboard.oneTimeMissions,
-                        challengePreview = dashboard.challengePreview
+                        challengePreview = dashboard.challengePreview,
+                        highlightedBadges = listOf(
+                            BadgeEntity(name = "EARLY BIRD", description = "", iconUrl = "", category = BadgeCategory.Habit, rarity = Rarity.Common),
+                            BadgeEntity(name = "FLOOD", description = "", iconUrl = "", category = BadgeCategory.Habit, rarity = Rarity.Common),
+                            BadgeEntity(name = "OCEAN MARATHON", description = "", iconUrl = "", category = BadgeCategory.SpecialEvent, rarity = Rarity.Rare)
+                        ),
+                        levelRewards = listOf(
+                            LevelReward(level = 16, title = "New Icon Pack", isUnlocked = true),
+                            LevelReward(level = 18, title = "Mint Theme", isUnlocked = false),
+                            LevelReward(level = 20, title = "Mystery Reward", isUnlocked = false)
+                        )
                     )
                 }
             }
@@ -97,5 +111,7 @@ data class MissionUiState(
     val dailyMissions: List<MissionCardModel> = emptyList(),
     val weeklyMissions: List<MissionCardModel> = emptyList(),
     val oneTimeMissions: List<MissionCardModel> = emptyList(),
-    val challengePreview: ChallengePreview? = null
+    val challengePreview: ChallengePreview? = null,
+    val highlightedBadges: List<BadgeEntity> = emptyList(),
+    val levelRewards: List<LevelReward> = emptyList()
 )
