@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,7 +30,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.anafthdev.aquri.R
+import com.anafthdev.aquri.ui.components.ClaySurface
 import com.anafthdev.aquri.ui.navigation.Destinations
 import com.anafthdev.aquri.ui.screens.onboarding.components.OnboardingBottomButton
 import com.anafthdev.aquri.ui.screens.onboarding.components.OnboardingCard
@@ -62,18 +63,20 @@ fun OnboardingScreen3(
                 .padding(top = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(
+            ClaySurface(
                 modifier = Modifier
-                    .size(128.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)),
-                contentAlignment = Alignment.Center
+                    .size(128.dp),
+                shape = CircleShape,
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                contentPadding = PaddingValues(24.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.WaterDrop,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(64.dp)
+                    modifier = Modifier
+                        .size(64.dp)
+                        .align(Alignment.Center)
                 )
             }
 

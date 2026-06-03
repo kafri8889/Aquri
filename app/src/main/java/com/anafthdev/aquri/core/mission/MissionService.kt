@@ -1,17 +1,21 @@
 package com.anafthdev.aquri.core.mission
 
+import com.anafthdev.aquri.core.gamification.GamificationService
 import com.anafthdev.aquri.core.mission.engine.MissionEngine
 import com.anafthdev.aquri.core.mission.engine.MissionEvaluationContext
-import com.anafthdev.aquri.core.mission.model.ChallengePreview
+import com.anafthdev.aquri.core.mission.model.MissionCardModel
 import com.anafthdev.aquri.core.mission.model.MissionDashboard
 import com.anafthdev.aquri.core.mission.model.MissionDefinition
 import com.anafthdev.aquri.core.mission.model.MissionRecurrence
+import com.anafthdev.aquri.core.mission.model.MissionStatus
 import com.anafthdev.aquri.data.repository.HydrationRepository
 import com.anafthdev.aquri.data.repository.UserRepository
 import com.anafthdev.aquri.utils.DateTimeUtils
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import java.time.Instant
 import java.time.ZoneId
@@ -26,12 +30,14 @@ import javax.inject.Singleton
  * and the evaluation engine to produce a dashboard-ready stream for the feature layer.
  */
 @Singleton
+@OptIn(ExperimentalCoroutinesApi::class)
 class MissionService @Inject constructor(
     private val missionDefinitionSource: MissionDefinitionSource,
     private val missionProgressStore: MissionProgressStore,
     private val missionEngine: MissionEngine,
     private val hydrationRepository: HydrationRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val gamificationService: GamificationService
 ) {
 
     /**
@@ -62,8 +68,12 @@ class MissionService @Inject constructor(
                     now = now,
                     locale = Locale.getDefault(),
                     todayLogs = logs.filter { it.log.logDate == today },
+                    weekLogs = logs.filter { it.log.logDate in weekRange.first..weekRange.second },
+                    allLogs = logs,
                     todaySummary = summaries.find { it.summaryDate == today },
-                    weekSummaries = summaries.filter { it.summaryDate in weekRange.first..weekRange.second }
+                    weekSummaries = summaries.filter { it.summaryDate in weekRange.first..weekRange.second },
+                    allSummaries = summaries,
+                    gamification = gamification
                 )
 
                 val cards = missionEngine.evaluate(
@@ -78,18 +88,20 @@ class MissionService @Inject constructor(
                     level = level,
                     levelTitle = gamification?.levelTitle ?: "Hydro Initiate",
                     totalXp = gamification?.totalXp ?: 0,
+                    coinBalance = gamification?.coinBalance ?: 0,
                     currentLevelXp = xpRequiredForLevel(level),
                     nextLevelXp = xpRequiredForLevel(level + 1),
+                    isPro = user.isPro,
                     currentStreak = gamification?.currentStreak ?: 0,
-                    shieldCount = gamification?.shieldCount ?: 0,
+                    shieldCount = if (user.isPro) {
+                        gamification?.shieldCount ?: 0
+                    } else {
+                        (gamification?.shieldCount ?: 0).coerceAtMost(1)
+                    },
                     dailyMissions = cards.filter { it.definition.recurrence == MissionRecurrence.Daily },
                     weeklyMissions = cards.filter { it.definition.recurrence == MissionRecurrence.Weekly },
                     oneTimeMissions = cards.filter { it.definition.recurrence == MissionRecurrence.OneTime },
-                    challengePreview = ChallengePreview(
-                        title = "Ocean Marathon",
-                        description = "2L/day for 7 days",
-                        rewardText = "Legendary badge + 300 XP"
-                    )
+                    challengePreview = null
                 )
             }
         }
@@ -107,8 +119,17 @@ class MissionService @Inject constructor(
      * Reward granting is intentionally separate from this state write so future
      * backend synchronization can own the authoritative reward transaction.
      */
-    suspend fun claimReward(missionId: String) {
-        missionProgressStore.markClaimed(missionId)
+    suspend fun claimReward(mission: MissionCardModel) {
+        if (mission.progress.status != MissionStatus.Completed) return
+        val user = userRepository.getUser().firstOrNull() ?: return
+        val isNewClaim = missionProgressStore.markClaimed(mission.definition.id)
+        if (!isNewClaim) return
+
+        gamificationService.awardMissionReward(
+            user = user,
+            xp = mission.definition.reward.xp,
+            coins = mission.definition.reward.coins
+        )
     }
 
     private fun xpRequiredForLevel(level: Int): Int {

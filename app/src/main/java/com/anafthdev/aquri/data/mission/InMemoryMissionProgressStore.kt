@@ -20,9 +20,11 @@ class InMemoryMissionProgressStore @Inject constructor() : MissionProgressStore 
 
     override fun observeClaimedMissionState(): Flow<Map<String, Long?>> = claimedState
 
-    override suspend fun markClaimed(missionId: String, claimedAt: Long) {
+    override suspend fun markClaimed(missionId: String, claimedAt: Long): Boolean {
+        if (claimedState.value.containsKey(missionId)) return false
         claimedState.update { current ->
             current + (missionId to claimedAt)
         }
+        return true
     }
 }

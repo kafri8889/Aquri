@@ -25,7 +25,9 @@ object DatabaseModule {
             context,
             AquriDatabase::class.java,
             AquriDatabase.DATABASE_NAME
-        ).build()
+        )
+            .addMigrations(AquriDatabase.MIGRATION_3_4)
+            .build()
     }
 
     @Provides

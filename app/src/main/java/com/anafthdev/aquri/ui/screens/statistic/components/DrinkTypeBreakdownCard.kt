@@ -14,8 +14,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocalDrink
 import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
+import com.anafthdev.aquri.ui.components.ClayCard
 import com.anafthdev.aquri.ui.screens.statistic.BeverageBreakdownData
 import com.anafthdev.aquri.ui.theme.AquriTheme
 
@@ -37,10 +36,9 @@ fun DrinkTypeBreakdownCard(
     items: List<BeverageBreakdownData>,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    ClayCard(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        containerColor = AquriTheme.clay.surfaceStrong
     ) {
         Column(
             modifier = Modifier.padding(20.dp),

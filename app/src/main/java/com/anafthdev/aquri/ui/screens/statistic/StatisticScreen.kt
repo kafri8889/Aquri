@@ -18,8 +18,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocalDrink
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.anafthdev.aquri.ui.components.ClayCard
 import com.anafthdev.aquri.ui.screens.statistic.components.BestWorstDaySection
 import com.anafthdev.aquri.ui.screens.statistic.components.BeverageTypeCard
 import com.anafthdev.aquri.ui.screens.statistic.components.DailyMainBarChart
@@ -383,14 +382,9 @@ private fun DailyStatCard(
     value: String,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    ClayCard(
         modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 1.dp
-        )
+        containerColor = AquriTheme.clay.surfaceStrong
     ) {
         Column(
             modifier = Modifier

@@ -3,11 +3,10 @@ package com.anafthdev.aquri.ui.screens.onboarding.components
 import androidx.annotation.StringRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -16,11 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,6 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anafthdev.aquri.R
+import com.anafthdev.aquri.ui.components.ClayPrimaryButton
+import com.anafthdev.aquri.ui.components.ClaySelectableCard
 
 @Composable
 fun OnboardingProgressIndicator(
@@ -135,16 +133,11 @@ fun OnboardingBottomButton(
             .fillMaxWidth()
             .padding(32.dp)
     ) {
-        Button(
+        ClayPrimaryButton(
             onClick = onClick,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp),
-            shape = RoundedCornerShape(9999.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            )
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -178,13 +171,12 @@ fun OnboardingCard(
         label = "borderColor"
     )
 
-    Box(
+    ClaySelectableCard(
+        selected = isSelected,
+        onClick = onClick,
         modifier = modifier
-            .clip(RoundedCornerShape(24.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(2.dp, borderColor, RoundedCornerShape(24.dp))
-            .clickable(onClick = onClick)
-            .padding(24.dp)
+            .fillMaxWidth(),
+        contentPadding = PaddingValues(24.dp)
     ) {
         content()
     }

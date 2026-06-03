@@ -2,7 +2,7 @@ package com.anafthdev.aquri.ui.navigation
 
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -14,6 +14,12 @@ import kotlinx.serialization.Serializable
 sealed class Destinations {
 
     @Serializable
+    data object Login : Destinations()
+
+    @Serializable
+    data object Register : Destinations()
+
+    @Serializable
     data object Home : Destinations()
 
     @Serializable
@@ -23,7 +29,19 @@ sealed class Destinations {
     data object Mission : Destinations()
 
     @Serializable
+    data object AllMissions : Destinations()
+
+    @Serializable
+    data object Badges : Destinations()
+
+    @Serializable
+    data object LevelLadder : Destinations()
+
+    @Serializable
     data object Profile : Destinations()
+
+    @Serializable
+    data object PersonalInformation : Destinations()
 
     @Serializable
     data object Onboarding1 : Destinations()
@@ -56,7 +74,7 @@ enum class NavigationItem(
     Mission(
         route = Destinations.Mission,
         title = R.string.mission,
-        icon = Icons.Default.Assignment
+        icon = Icons.AutoMirrored.Filled.Assignment
     ),
     Profile(
         route = Destinations.Profile,

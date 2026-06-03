@@ -11,11 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -29,8 +25,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.anafthdev.aquri.core.mission.model.ChallengePreview
-import com.anafthdev.aquri.core.mission.model.LevelReward
 import com.anafthdev.aquri.core.mission.model.MissionCardModel
 import com.anafthdev.aquri.core.mission.model.MissionCategory
 import com.anafthdev.aquri.core.mission.model.MissionDefinition
@@ -42,16 +36,20 @@ import com.anafthdev.aquri.core.mission.model.MissionTrigger
 import com.anafthdev.aquri.data.model.entity.BadgeEntity
 import com.anafthdev.aquri.data.model.enum.BadgeCategory
 import com.anafthdev.aquri.data.model.enum.Rarity
+import com.anafthdev.aquri.ui.components.ClayCard
+import com.anafthdev.aquri.ui.components.ClayPrimaryButton
 import com.anafthdev.aquri.ui.screens.mission.components.BadgeSection
-import com.anafthdev.aquri.ui.screens.mission.components.DailyQuestItem
-import com.anafthdev.aquri.ui.screens.mission.components.EpicChallengeCard
+import com.anafthdev.aquri.ui.screens.mission.components.CoinBalancePill
 import com.anafthdev.aquri.ui.screens.mission.components.LevelStatusCard
-import com.anafthdev.aquri.ui.screens.mission.components.ProgressionPreviewSection
+import com.anafthdev.aquri.ui.screens.mission.components.MissionCardItem
 import com.anafthdev.aquri.ui.screens.mission.components.StreakAndShieldRow
 import com.anafthdev.aquri.ui.theme.AquriTheme
 
 @Composable
 fun MissionScreen(
+    onViewAllMissions: () -> Unit,
+    onViewBadges: () -> Unit,
+    onViewLevelLadder: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MissionViewModel = hiltViewModel()
 ) {
@@ -59,41 +57,28 @@ fun MissionScreen(
 
     MissionScreenContent(
         state = state,
-        onRefresh = viewModel::refresh,
-        modifier = modifier
+        onViewAllMissions = onViewAllMissions,
+        onViewBadges = onViewBadges,
+        onViewLevelLadder = onViewLevelLadder,
+        onMissionActionClick = viewModel::onMissionActionClick,
+        modifier = Modifier
+            .padding(vertical = 24.dp)
+            .then(modifier)
     )
 }
 
 @Composable
 private fun MissionScreenContent(
     state: MissionUiState,
-    onRefresh: () -> Unit,
+    onViewAllMissions: () -> Unit,
+    onViewBadges: () -> Unit,
+    onViewLevelLadder: () -> Unit,
+    onMissionActionClick: (MissionCardModel) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Missions",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                IconButton(onClick = onRefresh, enabled = !state.isRefreshing) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Refresh"
-                    )
-                }
-            }
-        }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -102,11 +87,33 @@ private fun MissionScreenContent(
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
             item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Missions",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    CoinBalancePill(
+                        coinBalance = state.coinBalance
+                    )
+                }
+            }
+
+            item {
                 LevelStatusCard(
                     level = state.level,
                     levelTitle = state.levelTitle,
                     totalXp = state.totalXp,
+                    currentLevelXp = state.currentLevelXp,
                     nextLevelXp = state.nextLevelXp,
+                    onClick = onViewLevelLadder,
                     modifier = Modifier.padding(16.dp)
                 )
             }
@@ -114,6 +121,7 @@ private fun MissionScreenContent(
             item {
                 BadgeSection(
                     badges = state.highlightedBadges,
+                    onViewAllBadges = onViewBadges,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
@@ -122,6 +130,7 @@ private fun MissionScreenContent(
                 StreakAndShieldRow(
                     streakCount = state.streakCount,
                     shieldCount = state.shieldCount,
+                    isPro = state.isPro,
                     modifier = Modifier.padding(16.dp)
                 )
             }
@@ -135,56 +144,43 @@ private fun MissionScreenContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Daily Quests",
+                        text = "Mission Board",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    val completedCount = state.dailyMissions.count { it.progress.status != MissionStatus.Active }
-                    Text(
-                        text = "$completedCount/${state.dailyMissions.size} DONE",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF00838F),
-                        fontWeight = FontWeight.Bold
-                    )
+                    ClayPrimaryButton(
+                        onClick = onViewAllMissions,
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = "View All",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 
-            items(state.dailyMissions, key = { it.definition.id }) { mission ->
-                DailyQuestItem(
-                    mission = mission,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                )
-            }
+            missionSection(
+                title = "Daily Quests",
+                missions = state.dailyMissions,
+                isLoading = state.isLoading,
+                onMissionActionClick = onMissionActionClick
+            )
 
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Epic Challenges",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-                
-                state.challengePreview?.let { challenge ->
-                     EpicChallengeCard(
-                        title = challenge.title,
-                        description = challenge.description,
-                        progress = 14f / 30f, // Mock progress for Epic Challenge
-                        daysLeft = 14,
-                        totalDays = 30,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                }
-            }
+            missionSection(
+                title = "Weekly Missions",
+                missions = state.weeklyMissions,
+                isLoading = state.isLoading,
+                onMissionActionClick = onMissionActionClick
+            )
 
-            item {
-                ProgressionPreviewSection(
-                    rewards = state.levelRewards,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-                
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+            missionSection(
+                title = "Milestones",
+                missions = state.oneTimeMissions,
+                isLoading = state.isLoading,
+                onMissionActionClick = onMissionActionClick
+            )
 
             if (state.errorMessage != null) {
                 item {
@@ -203,6 +199,92 @@ private fun MissionScreenContent(
                     }
                 }
             }
+
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.missionSection(
+    title: String,
+    missions: List<MissionCardModel>,
+    isLoading: Boolean,
+    onMissionActionClick: (MissionCardModel) -> Unit
+) {
+    val previewMissions = missions
+        .filter { it.progress.status != MissionStatus.Claimed }
+        .sortedWith(
+            compareByDescending<MissionCardModel> { it.progress.status == MissionStatus.Completed }
+                .thenByDescending { it.progress.progress }
+                .thenByDescending { it.definition.reward.xp + it.definition.reward.coins }
+        )
+        .take(3)
+
+    item {
+        Spacer(modifier = Modifier.height(12.dp))
+        MissionSectionHeader(
+            title = title,
+            missions = missions,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+    }
+
+    if (previewMissions.isEmpty() && !isLoading) {
+        item {
+            ClayCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                containerColor = AquriTheme.clay.surfaceStrong
+            ) {
+                Text(
+                    text = "No ${title.lowercase()} available right now.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
+    }
+
+    items(previewMissions, key = { "${title}_${it.definition.id}" }) { mission ->
+        MissionCardItem(
+            mission = mission,
+            onClaim = { onMissionActionClick(mission) },
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+        )
+    }
+}
+
+@Composable
+private fun MissionSectionHeader(
+    title: String,
+    missions: List<MissionCardModel>,
+    action: @Composable (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        val completedCount = missions.count { it.progress.status != MissionStatus.Active }
+        if (action == null) {
+            Text(
+                text = "$completedCount/${missions.size} DONE",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFF00838F),
+                fontWeight = FontWeight.Bold
+            )
+        } else {
+            action()
         }
     }
 }
@@ -217,6 +299,8 @@ fun MissionScreenPreview() {
                 level = 14,
                 levelTitle = "Hydro Knight",
                 totalXp = 2450,
+                coinBalance = 180,
+                currentLevelXp = 2080,
                 nextLevelXp = 3000,
                 streakCount = 12,
                 shieldCount = 1,
@@ -254,23 +338,52 @@ fun MissionScreenPreview() {
                         )
                     )
                 ),
+                weeklyMissions = listOf(
+                    MissionCardModel(
+                        definition = MissionDefinition(
+                            id = "3",
+                            title = "Weekly Rhythm",
+                            description = "Hit your daily goal on 3 days this week.",
+                            category = MissionCategory.Hydration,
+                            recurrence = MissionRecurrence.Weekly,
+                            reward = MissionReward(xp = 90),
+                            trigger = MissionTrigger.WeeklyGoalDays(3)
+                        ),
+                        progress = MissionProgress(
+                            missionId = "3",
+                            progress = 0.66f,
+                            status = MissionStatus.Active
+                        )
+                    )
+                ),
+                oneTimeMissions = listOf(
+                    MissionCardModel(
+                        definition = MissionDefinition(
+                            id = "4",
+                            title = "Profile Ready",
+                            description = "Complete the hydration profile Aquri uses.",
+                            category = MissionCategory.Hydration,
+                            recurrence = MissionRecurrence.OneTime,
+                            reward = MissionReward(xp = 50),
+                            trigger = MissionTrigger.ProfileCompletion
+                        ),
+                        progress = MissionProgress(
+                            missionId = "4",
+                            progress = 1f,
+                            status = MissionStatus.Completed
+                        )
+                    )
+                ),
                 highlightedBadges = listOf(
                     BadgeEntity(name = "EARLY BIRD", description = "", iconUrl = "", category = BadgeCategory.Habit, rarity = Rarity.Common),
                     BadgeEntity(name = "FLOOD", description = "", iconUrl = "", category = BadgeCategory.Habit, rarity = Rarity.Common),
                     BadgeEntity(name = "OCEAN MARATHON", description = "", iconUrl = "", category = BadgeCategory.SpecialEvent, rarity = Rarity.Rare)
-                ),
-                levelRewards = listOf(
-                    LevelReward(level = 16, title = "New Icon Pack", isUnlocked = true),
-                    LevelReward(level = 18, title = "Mint Theme", isUnlocked = false),
-                    LevelReward(level = 20, title = "Mystery Reward", isUnlocked = false)
-                ),
-                challengePreview = ChallengePreview(
-                    title = "30-Day Hydration Sprint",
-                    description = "Complete your daily goal for 30 days straight to win the 'Oceanic Overlord' badge.",
-                    rewardText = "Oceanic Overlord Badge"
                 )
             ),
-            onRefresh = {}
+            onViewAllMissions = {},
+            onViewBadges = {},
+            onViewLevelLadder = {},
+            onMissionActionClick = {}
         )
     }
 }

@@ -2,6 +2,7 @@ package com.anafthdev.aquri.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.anafthdev.aquri.core.gamification.GamificationService
 import com.anafthdev.aquri.data.model.entity.BottleEntity
 import com.anafthdev.aquri.data.model.entity.DailySummaryEntity
 import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
@@ -28,7 +29,8 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val hydrationRepository: HydrationRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val gamificationService: GamificationService
 ) : ViewModel() {
 
     private val midnightDate: Long
@@ -198,12 +200,17 @@ class HomeViewModel @Inject constructor(
             goalMl = user.dailyGoalMl
         )
 
-        hydrationRepository.insertDailySummary(
-            currentSummary.copy(
-                totalMl = totalMl,
-                completionPct = if (currentSummary.goalMl > 0) totalMl / currentSummary.goalMl else 0f,
-                goalReached = totalMl >= currentSummary.goalMl
-            )
+        val updatedSummary = currentSummary.copy(
+            totalMl = totalMl,
+            completionPct = if (currentSummary.goalMl > 0) totalMl / currentSummary.goalMl else 0f,
+            goalReached = currentSummary.goalMl > 0 && totalMl >= currentSummary.goalMl
+        )
+
+        hydrationRepository.insertDailySummary(updatedSummary)
+        gamificationService.updateAfterDailySummary(
+            user = user,
+            previousSummary = currentSummary,
+            updatedSummary = updatedSummary
         )
     }
 }

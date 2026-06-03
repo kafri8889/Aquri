@@ -20,5 +20,5 @@ interface MissionDefinitionSource {
  */
 interface MissionProgressStore {
     fun observeClaimedMissionState(): Flow<Map<String, Long?>>
-    suspend fun markClaimed(missionId: String, claimedAt: Long = System.currentTimeMillis())
+    suspend fun markClaimed(missionId: String, claimedAt: Long = System.currentTimeMillis()): Boolean
 }

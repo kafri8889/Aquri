@@ -1,0 +1,242 @@
+{
+  "badges": [
+    {
+      "title": "FIRST DROP",
+      "description": "Log your first drink in Aquri."
+    },
+    {
+      "title": "PROFILE READY",
+      "description": "Complete the hydration profile Aquri uses."
+    },
+    {
+      "title": "GOAL CRUSHER",
+      "description": "Reach your daily hydration goal."
+    },
+    {
+      "title": "THREE-DAY FLOW",
+      "description": "Build a 3-day hydration streak."
+    },
+    {
+      "title": "WEEK WAVE",
+      "description": "Build a 7-day hydration streak."
+    },
+    {
+      "title": "OCEAN HABIT",
+      "description": "Build a 30-day hydration streak."
+    },
+    {
+      "title": "DEEP HYDRATION",
+      "description": "Drink 1,500 ml in one day."
+    },
+    {
+      "title": "HUNDRED LOGS",
+      "description": "Log 100 hydration entries."
+    },
+    {
+      "title": "EARLY BIRD",
+      "description": "Log a morning drink."
+    },
+    {
+      "title": "POWER REFILL",
+      "description": "Log several large refills."
+    },
+    {
+      "title": "AQURI FOUNDER",
+      "description": "Special early Aquri badge."
+    },
+    {
+      "title": "MIDNIGHT SIP",
+      "description": "Log a drink between 12 AM and 4 AM."
+    },
+    {
+      "title": "STEADY STREAM",
+      "description": "Log at least 5 drinks in a single day."
+    },
+    {
+      "title": "HYDRATION HERO",
+      "description": "Reach your goal for 14 consecutive days."
+    },
+    {
+      "title": "LIQUID LEGEND",
+      "description": "Reach your goal for 100 consecutive days."
+    },
+    {
+      "title": "WATER WARRIOR",
+      "description": "Drink 3,000 ml in one day."
+    },
+    {
+      "title": "SEA OF LOGS",
+      "description": "Log 500 hydration entries."
+    },
+    {
+      "title": "PERFECT WEEK",
+      "description": "Reach your daily goal every day for a full week."
+    },
+    {
+      "title": "MORNING RITUAL",
+      "description": "Log a drink before 8 AM for 5 days in a row."
+    },
+    {
+      "title": "WEEKEND WAVE",
+      "description": "Reach your goal on both Saturday and Sunday."
+    },
+    {
+      "title": "SOCIAL SPLASHER",
+      "description": "Share your hydration progress with a friend."
+    },
+    {
+      "title": "HYDRO HELPER",
+      "description": "Invite a friend to join Aquri."
+    },
+    {
+      "title": "COMMUNITY CIRCLE",
+      "description": "Join your first hydration challenge."
+    },
+    {
+      "title": "SUMMER SPLASH",
+      "description": "Stay hydrated during the peak of summer."
+    },
+    {
+      "title": "WINTER WELL",
+      "description": "Maintain hydration during the cold winter months."
+    },
+    {
+      "title": "NEW YEAR NEW FLOW",
+      "description": "Log a drink on New Year's Day."
+    },
+    {
+      "title": "BIRTHDAY BOTTLE",
+      "description": "Celebrate your birthday with a refreshing drink."
+    },
+    {
+      "title": "CONSISTENCY KING",
+      "description": "Log at least one drink every day for 6 months."
+    },
+    {
+      "title": "PRO HYDRATOR",
+      "description": "Unlock all basic hydration features."
+    }
+  ],
+  "missions": [
+    {
+      "title": "First Sip",
+      "description": "Log your first drink today."
+    },
+    {
+      "title": "Steady Flow",
+      "description": "Log 3 hydration entries today."
+    },
+    {
+      "title": "Rhythm Keeper",
+      "description": "Log 6 hydration entries today."
+    },
+    {
+      "title": "Morning Prime",
+      "description": "Log a drink between 06:00-10:00."
+    },
+    {
+      "title": "Afternoon Balance",
+      "description": "Log a drink between 12:00-16:00."
+    },
+    {
+      "title": "Evening Reset",
+      "description": "Log a drink between 18:00-21:00."
+    },
+    {
+      "title": "Half-Liter Start",
+      "description": "Drink 500 ml today."
+    },
+    {
+      "title": "Deep Hydration",
+      "description": "Drink 1,500 ml today."
+    },
+    {
+      "title": "Halfway There",
+      "description": "Reach 50% of your daily goal."
+    },
+    {
+      "title": "Goal Crusher",
+      "description": "Reach your daily hydration goal."
+    },
+    {
+      "title": "Big Refill",
+      "description": "Log one drink of at least 500 ml."
+    },
+    {
+      "title": "Water Focus",
+      "description": "Log 2 water entries today."
+    },
+    {
+      "title": "Two-Day Spark",
+      "description": "Hit your daily goal on 2 days this week."
+    },
+    {
+      "title": "Weekly Rhythm",
+      "description": "Hit your daily goal on 3 days this week."
+    },
+    {
+      "title": "Consistency Core",
+      "description": "Hit your daily goal on 5 days this week."
+    },
+    {
+      "title": "Seven-Liter Week",
+      "description": "Drink 7,000 ml this week."
+    },
+    {
+      "title": "Ten-Liter Week",
+      "description": "Drink 10,000 ml this week."
+    },
+    {
+      "title": "Log Master",
+      "description": "Log 20 hydration entries this week."
+    },
+    {
+      "title": "Power Refills",
+      "description": "Log 5 drinks of at least 500 ml this week."
+    },
+    {
+      "title": "Tea Breaks",
+      "description": "Log 3 tea entries this week."
+    },
+    {
+      "title": "Profile Ready",
+      "description": "Complete the hydration profile Aquri uses."
+    },
+    {
+      "title": "First Drop",
+      "description": "Log your first drink in Aquri."
+    },
+    {
+      "title": "First Goal",
+      "description": "Reach a daily goal for the first time."
+    },
+    {
+      "title": "Three-Day Flow",
+      "description": "Build a 3-day hydration streak."
+    },
+    {
+      "title": "Week Wave",
+      "description": "Build a 7-day hydration streak."
+    },
+    {
+      "title": "Fortnight Flow",
+      "description": "Build a 14-day hydration streak."
+    },
+    {
+      "title": "Ocean Habit",
+      "description": "Build a 30-day hydration streak."
+    },
+    {
+      "title": "Ten-Liter Legacy",
+      "description": "Drink 10,000 ml across your Aquri journey."
+    },
+    {
+      "title": "Fifty-Liter Legend",
+      "description": "Drink 50,000 ml across your Aquri journey."
+    },
+    {
+      "title": "Hundred Logs",
+      "description": "Log 100 hydration entries."
+    }
+  ]
+}

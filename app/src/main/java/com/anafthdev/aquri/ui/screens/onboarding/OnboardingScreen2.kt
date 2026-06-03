@@ -1,11 +1,10 @@
 package com.anafthdev.aquri.ui.screens.onboarding
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
@@ -43,6 +41,7 @@ import androidx.navigation.NavController
 import com.anafthdev.aquri.R
 import com.anafthdev.aquri.data.model.enum.ActivityLevel
 import com.anafthdev.aquri.data.model.enum.Climate
+import com.anafthdev.aquri.ui.components.ClaySelectableCard
 import com.anafthdev.aquri.ui.navigation.Destinations
 import com.anafthdev.aquri.ui.screens.onboarding.components.OnboardingBottomButton
 import com.anafthdev.aquri.ui.screens.onboarding.components.OnboardingCard
@@ -152,14 +151,14 @@ fun ActivityLevelCard(
 
     val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
     
-    Row(
+    ClaySelectableCard(
+        selected = isSelected,
+        onClick = onClick,
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(2.dp, borderColor, RoundedCornerShape(24.dp))
-            .clickable(onClick = onClick)
-            .padding(24.dp),
+            .fillMaxWidth(),
+        contentPadding = PaddingValues(24.dp)
+    ) {
+    Row(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
@@ -210,6 +209,7 @@ fun ActivityLevelCard(
                 unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
             )
         )
+    }
     }
 }
 

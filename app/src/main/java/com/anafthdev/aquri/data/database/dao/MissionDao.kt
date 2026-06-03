@@ -7,6 +7,7 @@ import androidx.room.Query
 import com.anafthdev.aquri.data.model.entity.ChallengeEntity
 import com.anafthdev.aquri.data.model.entity.QuestEntity
 import com.anafthdev.aquri.data.model.entity.UserChallengeEntity
+import com.anafthdev.aquri.data.model.entity.UserMissionClaimEntity
 import com.anafthdev.aquri.data.model.entity.UserQuestEntity
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
@@ -25,6 +26,15 @@ interface MissionDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUserQuest(userQuest: UserQuestEntity)
+
+    @Query("SELECT * FROM user_mission_claims WHERE user_id = :userId")
+    fun getUserMissionClaims(userId: UUID): Flow<List<UserMissionClaimEntity>>
+
+    @Query("SELECT * FROM user_mission_claims WHERE user_id = :userId AND mission_id = :missionId LIMIT 1")
+    suspend fun getUserMissionClaim(userId: UUID, missionId: String): UserMissionClaimEntity?
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertUserMissionClaim(userMissionClaim: UserMissionClaimEntity): Long
 
     @Query("SELECT * FROM challenges")
     fun getAllChallenges(): Flow<List<ChallengeEntity>>

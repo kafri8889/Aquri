@@ -22,6 +22,8 @@ data class UserGamificationEntity(
     val userId: UUID,
     @ColumnInfo(name = "total_xp")
     val totalXp: Int = 0,
+    @ColumnInfo(name = "coin_balance")
+    val coinBalance: Int = 0,
     @ColumnInfo(name = "current_level")
     val currentLevel: Int = 1,
     @ColumnInfo(name = "level_title")

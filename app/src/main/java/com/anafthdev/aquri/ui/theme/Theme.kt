@@ -14,6 +14,8 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 
 private val lightScheme = lightColorScheme(
     primary = primaryLight,
@@ -254,6 +256,28 @@ data class AquriColorScheme(
     val lightText: Color
 )
 
+@Immutable
+data class AquriClayTokens(
+    val radiusSmall: Dp,
+    val radiusMedium: Dp,
+    val radiusLarge: Dp,
+    val radiusExtraLarge: Dp,
+    val cardElevation: Dp,
+    val pressedElevation: Dp,
+    val floatingElevation: Dp,
+    val borderWidth: Dp,
+    val borderAlpha: Float,
+    val surface: Color,
+    val surfaceStrong: Color,
+    val surfaceMuted: Color,
+    val highlight: Color,
+    val shadow: Color,
+    val lavender: Color,
+    val coral: Color,
+    val sunny: Color,
+    val mint: Color
+)
+
 val lightAquriColorScheme = AquriColorScheme(
     success = aquriSuccessLight,
     onSuccess = onAquriSuccessLight,
@@ -266,12 +290,40 @@ val lightAquriColorScheme = AquriColorScheme(
 
 val LocalAquriColorScheme = staticCompositionLocalOf { lightAquriColorScheme }
 
+val lightAquriClayTokens = AquriClayTokens(
+    radiusSmall = 16.dp,
+    radiusMedium = 24.dp,
+    radiusLarge = 32.dp,
+    radiusExtraLarge = 40.dp,
+    cardElevation = 12.dp,
+    pressedElevation = 4.dp,
+    floatingElevation = 18.dp,
+    borderWidth = 1.dp,
+    borderAlpha = 0.42f,
+    surface = Color(0xFFFBFEFA),
+    surfaceStrong = Color(0xFFFFFFFF),
+    surfaceMuted = Color(0xFFEAF5F2),
+    highlight = Color.White.copy(alpha = 0.78f),
+    shadow = Color(0xFF8BB5B0).copy(alpha = 0.36f),
+    lavender = Color(0xFFE8E0FF),
+    coral = Color(0xFFFFD8CE),
+    sunny = Color(0xFFFFE7A9),
+    mint = Color(0xFFD7F6E7)
+)
+
+val LocalAquriClayTokens = staticCompositionLocalOf { lightAquriClayTokens }
+
 object AquriTheme {
 
     val colorScheme: AquriColorScheme
         @Composable
         @ReadOnlyComposable
         get() = LocalAquriColorScheme.current
+
+    val clay: AquriClayTokens
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalAquriClayTokens.current
 
 }
 
@@ -293,7 +345,8 @@ fun AquriTheme(
     }
 
     CompositionLocalProvider(
-        LocalAquriColorScheme provides lightAquriColorScheme
+        LocalAquriColorScheme provides lightAquriColorScheme,
+        LocalAquriClayTokens provides lightAquriClayTokens
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

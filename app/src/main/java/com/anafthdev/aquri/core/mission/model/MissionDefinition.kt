@@ -98,6 +98,41 @@ sealed interface MissionTrigger {
     ) : MissionTrigger
 
     /**
+     * Requires a total hydration amount in the active mission period.
+     */
+    data class HydrationAmountMl(
+        val requiredMl: Float
+    ) : MissionTrigger
+
+    /**
+     * Requires logs for a specific drink type name in the active mission period.
+     */
+    data class DrinkTypeLogCount(
+        val drinkTypeName: String,
+        val requiredLogs: Int
+    ) : MissionTrigger
+
+    /**
+     * Requires logs with at least a minimum drink amount in the active mission period.
+     */
+    data class LargeDrinkCount(
+        val minAmountMl: Float,
+        val requiredLogs: Int
+    ) : MissionTrigger
+
+    /**
+     * Requires the current user streak to reach a target.
+     */
+    data class CurrentStreakDays(
+        val requiredDays: Int
+    ) : MissionTrigger
+
+    /**
+     * Requires the local hydration profile to contain the fields Aquri needs.
+     */
+    data object ProfileCompletion : MissionTrigger
+
+    /**
      * Generic counter reserved for future non-hydration event streams.
      */
     data class GenericCounter(

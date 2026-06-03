@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.anafthdev.aquri.R
 import com.anafthdev.aquri.data.model.enum.Gender
+import com.anafthdev.aquri.ui.components.ClaySurface
 import com.anafthdev.aquri.ui.navigation.Destinations
 import com.anafthdev.aquri.ui.screens.onboarding.components.OnboardingBottomButton
 import com.anafthdev.aquri.ui.screens.onboarding.components.OnboardingCard
@@ -227,7 +229,7 @@ fun WeightInputSection(
             Row(
                 modifier = Modifier
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                     .padding(4.dp)
             ) {
                 UnitToggleButton(
@@ -244,13 +246,13 @@ fun WeightInputSection(
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        Box(
+        ClaySurface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(horizontal = 24.dp)
+                .height(80.dp),
+            shape = RoundedCornerShape(24.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentPadding = PaddingValues(horizontal = 24.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),

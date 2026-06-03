@@ -29,9 +29,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -83,7 +80,10 @@ import com.anafthdev.aquri.data.model.enum.DrinkBottleIcon
 import com.anafthdev.aquri.ui.components.AquriDropdownIcon
 import com.anafthdev.aquri.ui.components.AquriDropdownMenu
 import com.anafthdev.aquri.ui.components.AquriDropdownMenuItem
+import com.anafthdev.aquri.ui.components.ClayCard
+import com.anafthdev.aquri.ui.components.ClayPrimaryButton
 import com.anafthdev.aquri.ui.screens.home.components.LogDrinkBottomSheetContent
+import com.anafthdev.aquri.ui.theme.AquriTheme
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -122,7 +122,7 @@ fun HomeScreen(
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         LazyColumn(
-            contentPadding = PaddingValues(bottom = 16.dp),
+            contentPadding = PaddingValues(vertical = 24.dp),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
@@ -153,18 +153,13 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
                 ) {
-                    Button(
+                    ClayPrimaryButton(
                         onClick = {
                             selectedBottle = null
                             selectedLog = null
                             showBottomSheet = true
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                            contentColor = MaterialTheme.colorScheme.primary
-                        )
                     ) {
                         Icon(imageVector = Icons.Default.Add, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
@@ -492,16 +487,13 @@ private fun QuickRefillButton(
     val borderColor = if (bottle != null) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
     else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
 
-    Card(
-        shape = RoundedCornerShape(28.dp),
+    ClayCard(
+        shape = RoundedCornerShape(AquriTheme.clay.radiusLarge),
         onClick = onClick,
-        colors = CardDefaults.cardColors(
-            containerColor = containerColor
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        containerColor = containerColor,
+        borderColor = borderColor,
         modifier = modifier
             .height(120.dp)
-            .border(1.5.dp, borderColor, RoundedCornerShape(28.dp))
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -747,11 +739,10 @@ private fun NextReminderCard(
     val timeFormatter = remember { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
     val timeStr = timeFormatter.format(Date(time))
     
-    Card(
-        shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primary
-        ),
+    ClayCard(
+        shape = RoundedCornerShape(AquriTheme.clay.radiusLarge),
+        containerColor = MaterialTheme.colorScheme.primary,
+        borderColor = Color.White.copy(alpha = 0.55f),
         modifier = modifier.height(112.dp)
     ) {
         Column(
@@ -806,9 +797,9 @@ private fun DrinkHistoryItem(
     
     var showMenu by remember { mutableStateOf(false) }
 
-    Card(
-        shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ClayCard(
+        shape = RoundedCornerShape(AquriTheme.clay.radiusLarge),
+        containerColor = AquriTheme.clay.surfaceStrong,
         modifier = modifier.height(74.dp)
     ) {
         Row(

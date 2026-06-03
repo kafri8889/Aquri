@@ -2,14 +2,19 @@ package com.anafthdev.aquri.di
 
 import com.anafthdev.aquri.core.mission.MissionDefinitionSource
 import com.anafthdev.aquri.core.mission.MissionProgressStore
+import com.anafthdev.aquri.core.mission.evaluator.CurrentStreakDaysMissionEvaluator
 import com.anafthdev.aquri.core.mission.evaluator.DailyGoalPercentageMissionEvaluator
+import com.anafthdev.aquri.core.mission.evaluator.DrinkTypeLogCountMissionEvaluator
 import com.anafthdev.aquri.core.mission.evaluator.GenericCounterMissionEvaluator
+import com.anafthdev.aquri.core.mission.evaluator.HydrationAmountMissionEvaluator
 import com.anafthdev.aquri.core.mission.evaluator.HydrationLogCountMissionEvaluator
 import com.anafthdev.aquri.core.mission.evaluator.HydrationTimeWindowMissionEvaluator
+import com.anafthdev.aquri.core.mission.evaluator.LargeDrinkCountMissionEvaluator
 import com.anafthdev.aquri.core.mission.evaluator.MissionEvaluator
+import com.anafthdev.aquri.core.mission.evaluator.ProfileCompletionMissionEvaluator
 import com.anafthdev.aquri.core.mission.evaluator.WeeklyGoalDaysMissionEvaluator
 import com.anafthdev.aquri.data.mission.InMemoryMissionDefinitionSource
-import com.anafthdev.aquri.data.mission.InMemoryMissionProgressStore
+import com.anafthdev.aquri.data.mission.RoomMissionProgressStore
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -27,7 +32,7 @@ abstract class MissionBindingsModule {
 
     @Binds
     abstract fun bindMissionProgressStore(
-        store: InMemoryMissionProgressStore
+        store: RoomMissionProgressStore
     ): MissionProgressStore
 }
 
@@ -41,6 +46,11 @@ object MissionModule {
         hydrationLogCountMissionEvaluator: HydrationLogCountMissionEvaluator,
         dailyGoalPercentageMissionEvaluator: DailyGoalPercentageMissionEvaluator,
         weeklyGoalDaysMissionEvaluator: WeeklyGoalDaysMissionEvaluator,
+        hydrationAmountMissionEvaluator: HydrationAmountMissionEvaluator,
+        drinkTypeLogCountMissionEvaluator: DrinkTypeLogCountMissionEvaluator,
+        largeDrinkCountMissionEvaluator: LargeDrinkCountMissionEvaluator,
+        currentStreakDaysMissionEvaluator: CurrentStreakDaysMissionEvaluator,
+        profileCompletionMissionEvaluator: ProfileCompletionMissionEvaluator,
         genericCounterMissionEvaluator: GenericCounterMissionEvaluator
     ): Set<MissionEvaluator> {
         return setOf(
@@ -48,6 +58,11 @@ object MissionModule {
             hydrationLogCountMissionEvaluator,
             dailyGoalPercentageMissionEvaluator,
             weeklyGoalDaysMissionEvaluator,
+            hydrationAmountMissionEvaluator,
+            drinkTypeLogCountMissionEvaluator,
+            largeDrinkCountMissionEvaluator,
+            currentStreakDaysMissionEvaluator,
+            profileCompletionMissionEvaluator,
             genericCounterMissionEvaluator
         )
     }

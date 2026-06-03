@@ -8,13 +8,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,9 +36,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,7 +43,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -87,6 +81,13 @@ import com.anafthdev.aquri.data.model.enum.DrinkBottleIcon
 import com.anafthdev.aquri.ui.components.AquriDropdownIcon
 import com.anafthdev.aquri.ui.components.AquriDropdownMenu
 import com.anafthdev.aquri.ui.components.AquriDropdownMenuItem
+import com.anafthdev.aquri.ui.components.ClayCard
+import com.anafthdev.aquri.ui.components.ClayIconButton
+import com.anafthdev.aquri.ui.components.ClayPrimaryButton
+import com.anafthdev.aquri.ui.components.ClaySelectableCard
+import com.anafthdev.aquri.ui.components.ClaySurface
+import com.anafthdev.aquri.ui.components.clayTint
+import com.anafthdev.aquri.ui.theme.AquriTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -133,12 +134,11 @@ fun ManageBottleScreen(
                         ),
                         title = {},
                         navigationIcon = {
-                            IconButton(onClick = onNavigateBack) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back"
-                                )
-                            }
+                            ClayIconButton(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                onClick = onNavigateBack
+                            )
                         }
                     )
 
@@ -170,7 +170,9 @@ fun ManageBottleScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Row(
-                        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(198.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         DashboardSlot(
@@ -178,21 +180,21 @@ fun ManageBottleScreen(
                             isSelected = selectedSlot == 1,
                             bottle = bottles.find { it.id == user?.bottleSlot1 },
                             onClick = { selectedSlot = 1 },
-                            modifier = Modifier.weight(1f).fillMaxHeight()
+                            modifier = Modifier.weight(1f)
                         )
                         DashboardSlot(
                             index = 2,
                             isSelected = selectedSlot == 2,
                             bottle = bottles.find { it.id == user?.bottleSlot2 },
                             onClick = { selectedSlot = 2 },
-                            modifier = Modifier.weight(1f).fillMaxHeight()
+                            modifier = Modifier.weight(1f)
                         )
                         DashboardSlot(
                             index = 3,
                             isSelected = selectedSlot == 3,
                             bottle = bottles.find { it.id == user?.bottleSlot3 },
                             onClick = { selectedSlot = 3 },
-                            modifier = Modifier.weight(1f).fillMaxHeight()
+                            modifier = Modifier.weight(1f)
                         )
                     }
                     
@@ -490,9 +492,6 @@ fun DashboardSlot(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.24f)
-    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f)
-    
     val borderColor = if (isSelected) MaterialTheme.colorScheme.primary 
     else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
 
@@ -500,36 +499,32 @@ fun DashboardSlot(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
     ) {
-        Box(
+        ClaySelectableCard(
+            selected = isSelected,
+            onClick = onClick,
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight()
-                .clip(RoundedCornerShape(32.dp))
-                .background(containerColor)
+                .height(154.dp)
                 .then(
                     if (bottle == null && !isSelected) {
                         Modifier.drawBehindDashedBorder(borderColor)
                     } else {
-                        Modifier.border(2.dp, borderColor, RoundedCornerShape(32.dp))
+                        Modifier
                     }
-                )
-                .clickable { onClick() }
-                .padding(12.dp),
-            contentAlignment = Alignment.Center
+                ),
+            shape = RoundedCornerShape(AquriTheme.clay.radiusLarge),
+            contentPadding = PaddingValues(12.dp)
         ) {
             if (bottle != null) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.align(Alignment.Center)
                 ) {
                     Box(
                         modifier = Modifier
                             .size(52.dp)
-                            .background(
-                                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                                CircleShape
-                            ),
+                            .background(clayTint(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant, if (isSelected) 0.2f else 0.58f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -562,21 +557,25 @@ fun DashboardSlot(
                     imageVector = Icons.Default.Add,
                     contentDescription = null,
                     tint = borderColor,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier
+                        .size(24.dp)
+                        .align(Alignment.Center)
                 )
             }
         }
         
         Spacer(modifier = Modifier.height(12.dp))
         
-        Surface(
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        ClaySurface(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else clayTint(MaterialTheme.colorScheme.surfaceVariant, 0.5f),
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.height(24.dp)
+            modifier = Modifier.height(24.dp),
+            elevation = 0.dp,
+            contentPadding = PaddingValues(horizontal = 12.dp)
         ) {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.padding(horizontal = 12.dp)
+                modifier = Modifier.fillMaxSize()
             ) {
                 Text(
                     text = "SLOT $index",
@@ -596,21 +595,17 @@ fun BottleListItem(
     isAssignedToCurrentSlot: Boolean,
     onClick: () -> Unit
 ) {
-    val containerColor = if (isAssignedToCurrentSlot) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.24f)
-    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f)
+    val containerColor = if (isAssignedToCurrentSlot) clayTint(MaterialTheme.colorScheme.primaryContainer, 0.42f)
+    else AquriTheme.clay.surfaceStrong
 
-    Card(
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ClayCard(
+        containerColor = containerColor,
+        borderColor = if (isAssignedToCurrentSlot) MaterialTheme.colorScheme.primary.copy(alpha = 0.45f) else AquriTheme.clay.highlight,
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp)
-            .border(
-                width = 1.5.dp,
-                color = if (isAssignedToCurrentSlot) MaterialTheme.colorScheme.primary else Color.Transparent,
-                shape = RoundedCornerShape(24.dp)
-            )
+            .height(72.dp),
+        shape = RoundedCornerShape(AquriTheme.clay.radiusMedium)
     ) {
         Row(
             modifier = Modifier
@@ -623,11 +618,7 @@ fun BottleListItem(
                 Box(
                     modifier = Modifier
                         .size(44.dp)
-                        .background(
-                            if (isAssignedToCurrentSlot) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            RoundedCornerShape(12.dp)
-                        ),
+                        .background(clayTint(if (isAssignedToCurrentSlot) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant, if (isAssignedToCurrentSlot) 0.2f else 0.55f), RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -672,15 +663,18 @@ fun DrinkTypeListItem(
 ) {
     val drinkColor = Color(drinkType.hexColor.toColorInt())
     
-    Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = drinkColor.copy(alpha = 0.08f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    val containerColor = clayTint(drinkColor, 0.12f)
+    val iconContainerColor = clayTint(drinkColor, 0.2f)
+
+    ClayCard(
+        shape = RoundedCornerShape(AquriTheme.clay.radiusMedium),
+        containerColor = containerColor,
+        borderColor = drinkColor.copy(alpha = 0.34f),
+        elevation = AquriTheme.clay.pressedElevation,
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .height(64.dp)
-            .border(1.dp, drinkColor.copy(alpha = 0.2f), RoundedCornerShape(24.dp))
     ) {
         Row(
             modifier = Modifier
@@ -691,7 +685,7 @@ fun DrinkTypeListItem(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(drinkColor.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
+                    .background(iconContainerColor, RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
@@ -730,19 +724,11 @@ fun CustomBottleCard(
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
-    Card(
-        shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isAssigned) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ClayCard(
+        shape = RoundedCornerShape(AquriTheme.clay.radiusLarge),
+        containerColor = if (isAssigned) clayTint(MaterialTheme.colorScheme.primaryContainer, 0.58f) else AquriTheme.clay.surfaceStrong,
+        borderColor = if (isAssigned) MaterialTheme.colorScheme.primary.copy(alpha = 0.45f) else AquriTheme.clay.highlight,
         modifier = modifier
-            .border(
-                width = 2.dp,
-                color = if (isAssigned) MaterialTheme.colorScheme.primary else Color.Transparent,
-                shape = RoundedCornerShape(32.dp)
-            )
     ) {
         Column(
             modifier = Modifier
@@ -791,8 +777,7 @@ fun CustomBottleCard(
                 modifier = Modifier
                     .size(64.dp)
                     .background(
-                        if (isAssigned) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        clayTint(MaterialTheme.colorScheme.primary, if (isAssigned) 0.22f else 0.12f),
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -827,17 +812,11 @@ fun CustomBottleCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Button(
+            ClayPrimaryButton(
                 onClick = onClick,
-                shape = RoundedCornerShape(16.dp),
                 enabled = !isAssigned,
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-                modifier = Modifier.fillMaxWidth().height(36.dp),
-                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                    containerColor = if (isAssigned) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                    else MaterialTheme.colorScheme.primary,
-                    contentColor = if (isAssigned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary
-                )
+                modifier = Modifier.fillMaxWidth().height(36.dp)
             ) {
                 if (isAssigned) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -863,13 +842,14 @@ fun CustomDrinkTypeCard(
     var showMenu by remember { mutableStateOf(false) }
     val drinkColor = Color(android.graphics.Color.parseColor(drinkType.hexColor))
 
-    Card(
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = drinkColor.copy(alpha = 0.15f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = modifier.border(1.5.dp, drinkColor.copy(alpha = 0.3f), RoundedCornerShape(28.dp))
+    val containerColor = clayTint(drinkColor, 0.16f)
+
+    ClayCard(
+        shape = RoundedCornerShape(AquriTheme.clay.radiusLarge),
+        containerColor = containerColor,
+        borderColor = drinkColor.copy(alpha = 0.34f),
+        elevation = AquriTheme.clay.pressedElevation,
+        modifier = modifier
     ) {
         Row(
             modifier = Modifier
@@ -1120,7 +1100,7 @@ fun CreateBottleBottomSheetContent(
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        Button(
+        ClayPrimaryButton(
             onClick = {
                 val vol = volume.toFloatOrNull() ?: 0f
                 if (name.isBlank()) nameError = "Name cannot be empty"
@@ -1131,7 +1111,6 @@ fun CreateBottleBottomSheetContent(
                 }
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(16.dp)
         ) {
             Text(if (initialBottle != null) "Update Bottle" else "Save Bottle")
         }
@@ -1221,10 +1200,9 @@ fun CreateDrinkTypeBottomSheetContent(
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        Button(
+        ClayPrimaryButton(
             onClick = { if (name.isNotBlank()) onSave(name, selectedColor) },
             modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(16.dp)
         ) {
             Text(if (initialDrinkType != null) "Update Type" else "Save Type")
         }

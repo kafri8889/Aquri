@@ -1,7 +1,6 @@
 package com.anafthdev.aquri.ui.screens.mission.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ElectricBolt
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.LocalFireDepartment
@@ -26,8 +24,6 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -47,21 +43,34 @@ import com.anafthdev.aquri.core.mission.model.LevelReward
 import com.anafthdev.aquri.core.mission.model.MissionCardModel
 import com.anafthdev.aquri.core.mission.model.MissionStatus
 import com.anafthdev.aquri.data.model.entity.BadgeEntity
+import com.anafthdev.aquri.ui.components.AssetImage
+import com.anafthdev.aquri.ui.components.ClayCard
+import com.anafthdev.aquri.ui.components.ClayPrimaryButton
+import com.anafthdev.aquri.ui.components.ClaySurface
+import com.anafthdev.aquri.ui.theme.AquriTheme
 
 @Composable
 fun LevelStatusCard(
     level: Int,
     levelTitle: String,
     totalXp: Int,
+    currentLevelXp: Int,
     nextLevelXp: Int,
+    onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    val levelRangeXp = (nextLevelXp - currentLevelXp).coerceAtLeast(1)
+    val levelProgressXp = (totalXp - currentLevelXp).coerceIn(0, levelRangeXp)
+
+    ClayCard(
         modifier = modifier
             .fillMaxWidth()
             .height(180.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+        shape = RoundedCornerShape(AquriTheme.clay.radiusMedium),
+        containerColor = Color.Transparent,
+        borderColor = Color.White.copy(alpha = 0.32f),
+        elevation = AquriTheme.clay.floatingElevation,
+        onClick = onClick
     ) {
         Box(
             modifier = Modifier
@@ -85,7 +94,7 @@ fun LevelStatusCard(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Level $level – $levelTitle",
+                        text = "Level $level - $levelTitle",
                         style = MaterialTheme.typography.headlineSmall,
                         color = Color.White,
                         fontWeight = FontWeight.Bold
@@ -105,7 +114,7 @@ fun LevelStatusCard(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "${String.format("%,d", nextLevelXp)} XP FOR LEVEL ${level + 1}",
+                            text = "${String.format("%,d", levelRangeXp - levelProgressXp)} XP TO LEVEL ${level + 1}",
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White.copy(alpha = 0.7f)
                         )
@@ -120,7 +129,7 @@ fun LevelStatusCard(
                     ) {
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth(fraction = (totalXp.toFloat() / nextLevelXp.toFloat()).coerceIn(0f, 1f))
+                                .fillMaxWidth(fraction = (levelProgressXp.toFloat() / levelRangeXp.toFloat()).coerceIn(0f, 1f))
                                 .fillMaxHeight()
                                 .clip(CircleShape)
                                 .background(Color.White)
@@ -145,28 +154,73 @@ fun LevelStatusCard(
 @Composable
 fun BadgeSection(
     badges: List<BadgeEntity>,
+    onViewAllBadges: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Default.Star,
-                contentDescription = null,
-                tint = Color(0xFF00838F),
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Highlighted Badges",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF333333)
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Highlighted Badges",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            if (onViewAllBadges != null) {
+                ClayPrimaryButton(
+                    onClick = onViewAllBadges,
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        horizontal = 14.dp,
+                        vertical = 8.dp
+                    )
+                ) {
+                    Text(
+                        text = "View All",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
         Spacer(modifier = Modifier.height(16.dp))
+        if (badges.isEmpty()) {
+            ClayCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(AquriTheme.clay.radiusMedium),
+                containerColor = AquriTheme.clay.surfaceStrong,
+                borderColor = AquriTheme.clay.highlight
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "No badges earned yet",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Complete missions to unlock real Aquri badges.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            return
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -186,11 +240,10 @@ fun BadgeItem(
     badge: BadgeEntity,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    ClayCard(
         modifier = modifier.aspectRatio(1f),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(AquriTheme.clay.radiusMedium),
+        containerColor = AquriTheme.clay.surfaceStrong
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(8.dp),
@@ -202,31 +255,43 @@ fun BadgeItem(
                     .size(48.dp)
                     .clip(CircleShape)
                     .background(
-                        when (badge.name) {
-                            "EARLY BIRD" -> Color(0xFFFFE0B2)
-                            "FLOOD" -> Color(0xFFE1F5FE)
-                            "OCEAN MARATHON" -> Color(0xFFE0F2F1)
-                            else -> Color(0xFFF5F5F5)
+                        if (badge.iconUrl.isNotEmpty()) {
+                            Color.Transparent
+                        } else {
+                            when (badge.name) {
+                                "EARLY BIRD" -> Color(0xFFFFE0B2)
+                                "FLOOD" -> Color(0xFFE1F5FE)
+                                "OCEAN MARATHON" -> Color(0xFFE0F2F1)
+                                else -> Color(0xFFF5F5F5)
+                            }
                         }
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = when (badge.name) {
-                        "EARLY BIRD" -> Icons.Default.ElectricBolt
-                        "FLOOD" -> Icons.Default.WaterDrop
-                        "OCEAN MARATHON" -> Icons.Default.FitnessCenter
-                        else -> Icons.Default.Star
-                    },
-                    contentDescription = null,
-                    tint = when (badge.name) {
-                        "EARLY BIRD" -> Color(0xFFF57C00)
-                        "FLOOD" -> Color(0xFF0288D1)
-                        "OCEAN MARATHON" -> Color(0xFF00796B)
-                        else -> Color.Gray
-                    },
-                    modifier = Modifier.size(24.dp)
-                )
+                if (badge.iconUrl.isNotEmpty()) {
+                    AssetImage(
+                        assetPath = badge.iconUrl,
+                        contentDescription = null,
+                        modifier = Modifier.size(52.dp)
+                    )
+                } else {
+                    Icon(
+                        imageVector = when (badge.name) {
+                            "EARLY BIRD" -> Icons.Default.ElectricBolt
+                            "FLOOD" -> Icons.Default.WaterDrop
+                            "OCEAN MARATHON" -> Icons.Default.FitnessCenter
+                            else -> Icons.Default.Star
+                        },
+                        contentDescription = null,
+                        tint = when (badge.name) {
+                            "EARLY BIRD" -> Color(0xFFF57C00)
+                            "FLOOD" -> Color(0xFF0288D1)
+                            "OCEAN MARATHON" -> Color(0xFF00796B)
+                            else -> Color.Gray
+                        },
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -245,6 +310,7 @@ fun BadgeItem(
 fun StreakAndShieldRow(
     streakCount: Int,
     shieldCount: Int,
+    isPro: Boolean,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -260,12 +326,43 @@ fun StreakAndShieldRow(
         )
         StatsCard(
             label = "SHIELD ACTIVE",
-            value = "$shieldCount/1",
+            value = if (isPro) "$shieldCount" else "$shieldCount/1",
             icon = Icons.Default.Shield,
             iconColor = Color(0xFF0277BD),
-            isPro = true,
+            badgeText = if (isPro) "PRO" else "FREE",
             modifier = Modifier.weight(1f)
         )
+    }
+}
+
+@Composable
+fun CoinBalancePill(
+    coinBalance: Int,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        shape = CircleShape,
+        color = AquriTheme.clay.sunny.copy(alpha = 0.52f),
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Star,
+                contentDescription = null,
+                tint = Color(0xFFFFB300),
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                text = String.format("%,d", coinBalance),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF8A5B00)
+            )
+        }
     }
 }
 
@@ -275,14 +372,13 @@ fun StatsCard(
     value: String,
     icon: ImageVector,
     iconColor: Color,
-    isPro: Boolean = false,
+    badgeText: String? = null,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    ClayCard(
         modifier = modifier.height(110.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        shape = RoundedCornerShape(AquriTheme.clay.radiusMedium),
+        containerColor = AquriTheme.clay.surface
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -299,14 +395,14 @@ fun StatsCard(
                     tint = iconColor,
                     modifier = Modifier.size(24.dp)
                 )
-                if (isPro) {
+                if (badgeText != null) {
                     Surface(
                         shape = CircleShape,
                         color = Color(0xFFB3E5FC),
-                        modifier = Modifier.size(width = 32.dp, height = 18.dp)
+                        modifier = Modifier.size(width = 42.dp, height = 18.dp)
                     ) {
                         Text(
-                            text = "PRO",
+                            text = badgeText,
                             style = MaterialTheme.typography.labelSmall,
                             color = Color(0xFF01579B),
                             fontWeight = FontWeight.Bold,
@@ -337,15 +433,30 @@ fun StatsCard(
 @Composable
 fun DailyQuestItem(
     mission: MissionCardModel,
+    onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    val isCompleted = mission.progress.status != MissionStatus.Active
+    MissionCardItem(
+        mission = mission,
+        onClaim = onClick,
+        modifier = modifier
+    )
+}
 
-    Card(
+@Composable
+fun MissionCardItem(
+    mission: MissionCardModel,
+    onClaim: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    val isCompleted = mission.progress.status == MissionStatus.Completed
+    val isClaimed = mission.progress.status == MissionStatus.Claimed
+
+    ClayCard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(AquriTheme.clay.radiusMedium),
+        containerColor = if (isCompleted || isClaimed) AquriTheme.clay.mint else AquriTheme.clay.surfaceStrong,
+        borderColor = if (isCompleted || isClaimed) MaterialTheme.colorScheme.primary.copy(alpha = 0.32f) else AquriTheme.clay.highlight
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -355,7 +466,7 @@ fun DailyQuestItem(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFE0F2F1)),
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -380,7 +491,9 @@ fun DailyQuestItem(
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
-                if (!isCompleted && mission.progress.progress > 0) {
+                Spacer(modifier = Modifier.height(8.dp))
+                MissionRewardRow(mission = mission)
+                if (mission.progress.status == MissionStatus.Active) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
@@ -400,7 +513,7 @@ fun DailyQuestItem(
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "${(mission.progress.progress * 100).toInt()}%",
+                            text = "${(mission.progress.progress * 100).toInt().coerceIn(0, 100)}%",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF00ACC1)
@@ -410,21 +523,79 @@ fun DailyQuestItem(
             }
             Spacer(modifier = Modifier.width(8.dp))
             if (isCompleted) {
-                Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    tint = Color(0xFF4CAF50),
-                    modifier = Modifier.size(24.dp)
-                )
-            } else if (mission.progress.progress == 0f) {
-                 Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    tint = Color.LightGray.copy(alpha = 0.5f),
-                    modifier = Modifier.size(24.dp)
-                )
+                ClayPrimaryButton(
+                    onClick = { onClaim?.invoke() },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        horizontal = 16.dp,
+                        vertical = 8.dp
+                    )
+                ) {
+                    Text(
+                        text = "Claim",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            } else if (isClaimed) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f)
+                ) {
+                    Text(
+                        text = "Claimed",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun MissionRewardRow(
+    mission: MissionCardModel
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (mission.definition.reward.xp > 0) {
+            RewardPill(
+                text = "+${mission.definition.reward.xp} XP",
+                containerColor = AquriTheme.clay.sunny,
+                contentColor = Color(0xFF8A5B00)
+            )
+        }
+        if (mission.definition.reward.coins > 0) {
+            RewardPill(
+                text = "+${mission.definition.reward.coins} coins",
+                containerColor = AquriTheme.clay.coral,
+                contentColor = Color(0xFF9A3E2E)
+            )
+        }
+    }
+}
+
+@Composable
+private fun RewardPill(
+    text: String,
+    containerColor: Color,
+    contentColor: Color
+) {
+    Surface(
+        shape = CircleShape,
+        color = containerColor.copy(alpha = 0.78f)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = contentColor,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+        )
     }
 }
 
@@ -437,12 +608,14 @@ fun EpicChallengeCard(
     totalDays: Int,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    ClayCard(
         modifier = modifier
             .fillMaxWidth()
             .height(200.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+        shape = RoundedCornerShape(AquriTheme.clay.radiusLarge),
+        containerColor = Color.Transparent,
+        borderColor = Color.White.copy(alpha = 0.32f),
+        elevation = AquriTheme.clay.floatingElevation
     ) {
         Box(
             modifier = Modifier
@@ -542,7 +715,7 @@ fun ProgressionPreviewSection(
             text = "Progression Preview",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF333333)
+            color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(16.dp))
         Row(
@@ -568,13 +741,12 @@ fun RewardPreviewItem(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(
+        ClaySurface(
             modifier = Modifier
-                .size(64.dp)
-                .clip(CircleShape)
-                .border(1.dp, if (reward.isUnlocked) Color(0xFF00838F) else Color.LightGray, CircleShape)
-                .background(if (reward.isUnlocked) Color(0xFFE0F2F1) else Color(0xFFF5F5F5)),
-            contentAlignment = Alignment.Center
+                .size(64.dp),
+            shape = CircleShape,
+            containerColor = if (reward.isUnlocked) AquriTheme.clay.mint else AquriTheme.clay.surfaceMuted,
+            borderColor = if (reward.isUnlocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f) else AquriTheme.clay.highlight
         ) {
             Icon(
                 imageVector = when (reward.title) {
@@ -584,7 +756,9 @@ fun RewardPreviewItem(
                 },
                 contentDescription = null,
                 tint = if (reward.isUnlocked) Color(0xFF00838F) else Color.Gray,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier
+                    .size(24.dp)
+                    .align(Alignment.Center)
             )
         }
         Spacer(modifier = Modifier.height(8.dp))

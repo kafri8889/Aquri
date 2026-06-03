@@ -11,6 +11,7 @@ import com.anafthdev.aquri.data.model.enum.Climate
 import com.anafthdev.aquri.data.model.enum.Gender
 import com.anafthdev.aquri.data.repository.PreferenceRepository
 import com.anafthdev.aquri.data.repository.UserRepository
+import com.anafthdev.aquri.ui.shared.calculateHydrationGoalMl
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +19,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.math.roundToInt
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
@@ -100,32 +100,14 @@ fun OnboardingUiState.calculateDailyGoal(): Float {
     val weightInKg = when (weightUnit) {
         WeightUnit.KG -> rawWeight
         WeightUnit.LBS -> rawWeight * 0.453592f
-    }.coerceIn(20f, 300f) // clamp berat yang masuk akal
-
-    // Base: berbeda per gender (WHO recommendation)
-    val base = when (gender) {
-        Gender.Male -> weightInKg * 35f
-        Gender.Female -> weightInKg * 31f
-        Gender.Other -> weightInKg * 33f
     }
 
-    // Activity level adjustment
-    val activityBonus = when (activityLevel) {
-        ActivityLevel.Sedentary -> 0f
-        ActivityLevel.Moderate -> 350f
-        ActivityLevel.Active -> 700f
-    }
-
-    // Climate adjustment
-    val climateAdjustment = when (climate) {
-        Climate.Cold -> -100f
-        Climate.Mild -> 0f
-        Climate.Hot -> 200f
-    }
-
-    return (base + activityBonus + climateAdjustment)
-        .coerceIn(1500f, 5000f) // clamp hasil akhir (ml)
-        .let { (it / 50f).roundToInt() * 50f } // bulatkan ke 50ml terdekat
+    return calculateHydrationGoalMl(
+        gender = gender,
+        weightKg = weightInKg,
+        activityLevel = activityLevel,
+        climate = climate
+    )
 }
 
 data class OnboardingUiState(

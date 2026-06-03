@@ -2,6 +2,8 @@ package com.anafthdev.aquri.ui.screens.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.anafthdev.aquri.data.repository.AuthMode
+import com.anafthdev.aquri.data.repository.AuthRepository
 import com.anafthdev.aquri.data.repository.PreferenceRepository
 import com.anafthdev.aquri.ui.navigation.Destinations
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,6 +17,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
+    private val authRepository: AuthRepository,
     private val preferenceRepository: PreferenceRepository
 ) : ViewModel() {
 
@@ -23,8 +26,15 @@ class MainViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            val authSession = authRepository.session.first()
             val isCompleted = preferenceRepository.isOnboardingCompleted.first()
-            _startDestination.update { if (isCompleted) Destinations.Home else Destinations.Onboarding1 }
+            _startDestination.update {
+                when (authSession.mode) {
+                    AuthMode.Unknown -> Destinations.Login
+                    AuthMode.Guest,
+                    AuthMode.Authenticated -> if (isCompleted) Destinations.Home else Destinations.Onboarding1
+                }
+            }
         }
     }
 }

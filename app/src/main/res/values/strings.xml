@@ -41,4 +41,26 @@
     <string name="activity_climate">Activity &amp; Climate</string>
     <string name="ml">ml</string>
     <string name="onboarding_completed_footer">WE USE SCIENCE-BASED ALGORITHMS FOR ACCURACY</string>
+
+    <!-- Login -->
+    <string name="login_title">Welcome to Aquri</string>
+    <string name="login_subtitle">Sign in to buy Pro, or continue as a free guest.</string>
+    <string name="login_automatic_signup_note">Note: If the account does not exist, it will be automatically created when you sign in.</string>
+    <string name="login_google_button">Sign in with Google</string>
+    <string name="login_google_loading">Signing in&#8230;</string>
+    <string name="login_email">Email</string>
+    <string name="login_password">Password</string>
+    <string name="login_forgot_password">Forgot password?</string>
+    <string name="login_email_button">Continue with email</string>
+    <string name="login_guest_button">Continue as guest</string>
+    <string name="login_error_google_not_configured">Google sign-in is not configured.</string>
+    <string name="login_error_google_failed">Google sign-in failed.</string>
+
+    <!-- Register -->
+    <string name="register_title">Create Account</string>
+    <string name="register_name">Name</string>
+    <string name="register_email">Email</string>
+    <string name="register_password">Password</string>
+    <string name="register_repeat_password">Repeat Password</string>
+    <string name="register_button">Register</string>
 </resources>

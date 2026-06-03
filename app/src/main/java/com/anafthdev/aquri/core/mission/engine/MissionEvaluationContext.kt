@@ -4,6 +4,7 @@ import com.anafthdev.aquri.core.mission.model.MissionEvent
 import com.anafthdev.aquri.data.model.entity.DailySummaryEntity
 import com.anafthdev.aquri.data.model.entity.HydrationLogWithBottle
 import com.anafthdev.aquri.data.model.entity.UserEntity
+import com.anafthdev.aquri.data.model.entity.UserGamificationEntity
 import java.util.Locale
 
 /**
@@ -18,7 +19,11 @@ data class MissionEvaluationContext(
     val now: Long,
     val locale: Locale,
     val todayLogs: List<HydrationLogWithBottle>,
+    val weekLogs: List<HydrationLogWithBottle> = emptyList(),
+    val allLogs: List<HydrationLogWithBottle> = emptyList(),
     val todaySummary: DailySummaryEntity?,
     val weekSummaries: List<DailySummaryEntity>,
+    val allSummaries: List<DailySummaryEntity> = emptyList(),
+    val gamification: UserGamificationEntity? = null,
     val lastEvent: MissionEvent? = null
 )

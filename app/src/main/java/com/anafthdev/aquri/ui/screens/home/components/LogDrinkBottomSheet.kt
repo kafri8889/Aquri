@@ -1,7 +1,6 @@
 package com.anafthdev.aquri.ui.screens.home.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,9 +23,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -42,7 +38,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -57,6 +52,11 @@ import com.anafthdev.aquri.data.model.entity.BottleEntity
 import com.anafthdev.aquri.data.model.entity.DrinkTypeEntity
 import com.anafthdev.aquri.data.model.entity.HydrationLogWithBottle
 import com.anafthdev.aquri.data.model.enum.DrinkBottleIcon
+import com.anafthdev.aquri.ui.components.ClayCard
+import com.anafthdev.aquri.ui.components.ClayPrimaryButton
+import com.anafthdev.aquri.ui.components.ClaySelectableCard
+import com.anafthdev.aquri.ui.components.ClaySurface
+import com.anafthdev.aquri.ui.theme.AquriTheme
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -201,20 +201,13 @@ fun LogDrinkBottomSheetContent(
                 val isSelected = selectedDrinkType?.id == type.id
                 val color = Color(type.hexColor.toColorInt())
 
-                Box(
+                ClaySelectableCard(
+                    selected = isSelected,
+                    onClick = { selectedDrinkType = type },
                     modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(
-                            if (isSelected) color.copy(alpha = 0.1f)
-                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        )
-                        .border(
-                            width = 2.dp,
-                            color = if (isSelected) color else Color.Transparent,
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .clickable { selectedDrinkType = type }
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .height(42.dp),
+                    shape = RoundedCornerShape(AquriTheme.clay.radiusSmall),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(modifier = Modifier.size(8.dp).background(color, CircleShape))
@@ -244,15 +237,18 @@ fun LogDrinkBottomSheetContent(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        ClaySurface(
             modifier = Modifier
                 .padding(horizontal = 24.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                .clickable { showTimePicker = true }
-                .padding(16.dp)
+                .clickable { showTimePicker = true },
+            shape = RoundedCornerShape(AquriTheme.clay.radiusMedium),
+            containerColor = AquriTheme.clay.surface,
+            contentPadding = PaddingValues(16.dp)
+        ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
         ) {
             Icon(
                 imageVector = Icons.Default.AccessTime,
@@ -266,18 +262,18 @@ fun LogDrinkBottomSheetContent(
                 fontWeight = FontWeight.Bold
             )
         }
+        }
         
         Spacer(modifier = Modifier.height(32.dp))
         
         // --- Save Button ---
-        Button(
+        ClayPrimaryButton(
             onClick = {
-                val bottle = selectedBottle ?: return@Button
-                val type = selectedDrinkType ?: return@Button
+                val bottle = selectedBottle ?: return@ClayPrimaryButton
+                val type = selectedDrinkType ?: return@ClayPrimaryButton
                 val amount = if (bottle.id == BottleEntity.OTHER_BOTTLE_ID) customAmount.toFloatOrNull() else null
                 onSave(bottle, type, logTime, amount)
             },
-            shape = RoundedCornerShape(16.dp),
             enabled = selectedBottle != null && selectedDrinkType != null && 
                     (selectedBottle?.id != BottleEntity.OTHER_BOTTLE_ID || customAmount.isNotEmpty()),
             modifier = Modifier
@@ -301,9 +297,9 @@ fun LogDrinkBottomSheetContent(
         )
 
         Dialog(onDismissRequest = { showTimePicker = false }) {
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ClayCard(
+                shape = RoundedCornerShape(AquriTheme.clay.radiusLarge),
+                containerColor = AquriTheme.clay.surfaceStrong
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
@@ -361,20 +357,20 @@ fun BottleItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
     ) {
-        Box(
+        ClaySelectableCard(
+            selected = isSelected,
+            onClick = onClick,
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
-                .clip(RoundedCornerShape(16.dp))
-                .background(containerColor)
-                .border(2.dp, borderColor, RoundedCornerShape(16.dp))
-                .clickable { onClick() }
-                .padding(12.dp),
-            contentAlignment = Alignment.Center
+                .padding(1.dp),
+            shape = RoundedCornerShape(AquriTheme.clay.radiusMedium),
+            contentPadding = PaddingValues(12.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.align(Alignment.Center)
             ) {
                 Box(
                     modifier = Modifier
